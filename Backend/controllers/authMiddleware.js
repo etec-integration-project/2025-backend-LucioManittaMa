@@ -1,11 +1,10 @@
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../config/dotenv.js';
+
+// Configuración embebida
+const JWT_SECRET = 'tu_clave_secreta_aqui';
 
 /**
  * Middleware para verificar el token JWT.
- * @param {Request} req - Solicitud HTTP.
- * @param {Response} res - Respuesta HTTP.
- * @param {Function} next - Siguiente middleware.
  */
 export const authMiddleware = (req, res, next) => {
     // Permitir GET requests a /products sin autenticación
@@ -31,7 +30,6 @@ export const authMiddleware = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
-        console.error('Error en authMiddleware:', error);
         return res.status(401).json({
             success: false,
             message: 'Token inválido o expirado',
