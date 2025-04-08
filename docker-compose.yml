@@ -1,0 +1,51 @@
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: urban
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build: ./Backend
+    container_name: backend_service
+    restart: always
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_USER: user
+      DB_PASSWORD: userpass
+      DB_NAME: urban
+    depends_on:
+      - mysql
+
+  frontend:
+    build: ./Frontend
+    container_name: frontend_service
+    restart: always
+    expose:
+      - "5000"
+    depends_on:
+      - backend
+
+  proxy:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      - "81:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  mysql_data:

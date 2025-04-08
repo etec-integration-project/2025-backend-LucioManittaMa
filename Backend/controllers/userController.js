@@ -1,18 +1,16 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { User } from '../models/index.js'; 
-import { JWT_SECRET, JWT_EXPIRES_IN } from '../config/dotenv.js';
+import { User } from '../models/index.js';
 
-/**
- * @desc Registrar un nuevo usuario
- * @route POST /api/users/register
- * @access Public
- */
+// Configuración embebida
+const JWT_SECRET = 'tu_clave_secreta_aqui';
+const JWT_EXPIRES_IN = '24h';
+
 export const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
     try {
-        const existingUser = await user.findOne({ where: { email } }); 
+        const existingUser = await User.findOne({ where: { email } }); 
 
         if (existingUser) {
             return res.status(400).json({ message: 'El usuario ya existe' });
@@ -36,11 +34,6 @@ export const registerUser = async (req, res) => {
     }
 };
 
-/**
- * @desc Autenticar un usuario
- * @route POST /api/users/login
- * @access Public
- */
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
@@ -66,11 +59,6 @@ export const loginUser = async (req, res) => {
     }
 };
 
-/**
- * @desc Obtener información del usuario autenticado
- * @route GET /api/users/me
- * @access Private
- */
 export const getUserProfile = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.user_id); 
