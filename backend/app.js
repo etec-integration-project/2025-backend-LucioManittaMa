@@ -14,16 +14,22 @@ import { getAllProducts } from './controllers/productsController.js';
 const app = express();
 
 // Conexión a la base de datos
-connectDB();
-
+connectDB().catch((error) => {
+  console.error('Error al conectar a la base de datos:', error.message);
+  process.exit(1); // Salir si no se puede conectar
+});
 // Middlewares globales
 app.use(express.json());
+
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: 'http://localhost:81', // Dirección del frontend
+  credentials: true, // Permitir cookies y encabezados de autenticación
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Métodos permitidos
+  allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
 }));
+
+// Manejar solicitudes preflight (OPTIONS)
+app.options('*', cors());
 
 // Rutas públicas
 app.use('/api/auth', authRoutes);
