@@ -1,6 +1,4 @@
-export const API_URL = process.env.NODE_ENV === 'production'
-  ? 'http://backend_service:3000/api' // Para producción (Docker)
-  : 'http://localhost:3000/api'; // Para desarrollo local
+export const API_URL = 'http://localhost:3000/api';
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
