@@ -12,14 +12,17 @@ import { errorHandler } from './controllers/errorHandler.js';
 
 const app = express();
 
+// Conexión a la base de datos
 connectDB().catch((error) => {
   console.error('Error al conectar a la base de datos:', error.message);
   process.exit(1);
 });
 
-app.use(corsMiddleware);
-app.use(express.json());
+// Middlewares
+app.use(corsMiddleware); // Middleware para CORS
+app.use(express.json()); // Middleware para parsear JSON
 
+// Rutas
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/cart', cartRoutes);
@@ -27,8 +30,16 @@ app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+
+// Ruta de prueba
 app.get('/api/test', (req, res) => res.json({ message: 'API funcionando correctamente' }));
 
+// Manejo de rutas no encontradas
+app.use((req, res, next) => {
+  res.status(404).json({ message: 'Ruta no encontrada' });
+});
+
+// Middleware de manejo de errores
 app.use(errorHandler);
 
 export default app;
