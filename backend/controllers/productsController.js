@@ -25,16 +25,43 @@ export const getAllProducts = async (req, res) => {
  * @access Private/Admin
  */
 export const createProduct = async (req, res) => {
-    // Verificar si el usuario es admin
-    if (req.user.rol !== 'admin') {
-        return res.status(403).json({ message: 'No autorizado' });
-    }
-
     try {
-        const product = await Product.create(req.body);
+        // Check if user exists and has admin role
+        if (!req.user) {
+            return res.status(401).json({ message: 'No autenticado' });
+        }
+
+        if (req.user.rol !== 'admin') {
+            return res.status(403).json({ message: 'No autorizado - Se requiere rol de administrador' });
+        }
+
+        const { nombre, descripción, precio, stock, category_id, imagen } = req.body;
+
+        // Validate required fields
+        if (!nombre || !precio || !stock || !category_id) {
+            return res.status(400).json({ 
+                message: 'Faltan campos requeridos',
+                required: ['nombre', 'precio', 'stock', 'category_id'],
+                received: req.body 
+            });
+        }
+
+        const product = await Product.create({
+            nombre,
+            descripción,
+            precio,
+            stock,
+            category_id,
+            imagen
+        });
+
         res.status(201).json(product);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Error al crear producto:', error);
+        res.status(500).json({ 
+            message: 'Error al crear el producto',
+            error: error.message 
+        });
     }
 };
 

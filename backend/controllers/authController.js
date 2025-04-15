@@ -2,10 +2,6 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/index.js';
 
-// Configuración embebida
-const JWT_SECRET = 'tu_clave_secreta_aqui';
-const JWT_EXPIRES_IN = '24h';
-
 export const register = async (req, res) => {
     const { nombre, email, contraseña, rol = 'cliente', dirección, teléfono } = req.body;
 
@@ -32,15 +28,23 @@ export const register = async (req, res) => {
 
         const token = jwt.sign(
             { userId: newUser.user_id, rol: newUser.rol },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
+        console.log('✅ Usuario registrado:', email);
         res.status(201).json({
             message: 'Usuario registrado exitosamente',
-            token
+            token,
+            user: {
+                id: newUser.user_id,
+                nombre: newUser.nombre,
+                email: newUser.email,
+                rol: newUser.rol
+            }
         });
     } catch (error) {
+        console.error('❌ Error en registro:', error);
         res.status(500).json({ message: 'Error al registrar usuario', error: error.message });
     }
 };
@@ -55,15 +59,17 @@ export const login = async (req, res) => {
         });
 
         if (!user || !(await bcrypt.compare(contraseña, user.contraseña))) {
+            console.log('❌ Intento de login fallido para:', email);
             return res.status(401).json({ message: 'Credenciales inválidas' });
         }
 
         const token = jwt.sign(
             { userId: user.user_id, rol: user.rol },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
+        console.log('✅ Login exitoso para:', email);
         res.status(200).json({
             token,
             user: {
@@ -75,6 +81,7 @@ export const login = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('❌ Error en login:', error);
         res.status(500).json({ 
             message: 'Error al iniciar sesión', 
             error: error.message 
@@ -84,9 +91,8 @@ export const login = async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
     try {
-        const userId = req.user.userId;
-        const user = await User.findByPk(userId);
-
+        const user = await User.findByPk(req.user.userId);
+        
         if (!user) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
@@ -98,6 +104,7 @@ export const getUserProfile = async (req, res) => {
             rol: user.rol
         });
     } catch (error) {
-        res.status(500).json({ message: 'Error al obtener el perfil del usuario', error: error.message });
+        console.error('❌ Error al obtener perfil:', error);
+        res.status(500).json({ message: 'Error al obtener el perfil', error: error.message });
     }
 };

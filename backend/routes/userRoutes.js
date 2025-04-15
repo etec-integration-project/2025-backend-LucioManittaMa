@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, getUserProfile } from '../controllers/userController.js';
+import { registerUser, loginUser, getUserProfile, getAllUsers, getUserById, updateUser, deleteUser } from '../controllers/userController.js';
 import { authMiddleware } from '../controllers/authMiddleware.js'; 
 
 // Crear una instancia del enrutador
@@ -25,5 +25,11 @@ router.post('/login', loginUser);
  * @access Privado
  */
 router.get('/me', authMiddleware, getUserProfile);
+
+// Rutas de administración de usuarios (solo admin)
+router.get('/', authMiddleware, getAllUsers);
+router.get('/:id', authMiddleware, getUserById);
+router.put('/:id', authMiddleware, updateUser);
+router.delete('/:id', authMiddleware, deleteUser);
 
 export default router;
