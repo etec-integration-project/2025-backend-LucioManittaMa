@@ -2,9 +2,9 @@ import { Sequelize } from 'sequelize';
 
 // Configuración de la conexión a la base de datos usando variables de entorno
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'urban', // Nombre de la base de datos
-  process.env.DB_USER || 'user', // Usuario de la base de datos
-  process.env.DB_PASSWORD || 'userpass', // Contraseña de la base de datos
+  process.env.DB_NAME || 'urban', 
+  process.env.DB_USER || 'user', 
+  process.env.DB_PASSWORD || 'userpass',
   {
     host: process.env.DB_HOST || 'localhost', // Host de la base de datos
     dialect: 'mysql', // Dialecto de la base de datos
