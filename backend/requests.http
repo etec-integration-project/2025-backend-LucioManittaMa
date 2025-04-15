@@ -1,0 +1,194 @@
+### Variables globales
+@baseUrl = http://localhost:3000/api
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbCI6ImFkbWluIiwiaWF0IjoxNzQ0NzQwOTU0LCJleHAiOjE3NDQ4MjczNTR9.narHnEBGTtj9eYW1fGUpRL9Z1yWmwgVhFAZu7l8zjh8
+
+### Test API
+GET {{baseUrl}}/test
+
+### Auth endpoints
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "aaa@aaa",
+    "contraseña": "aaa"
+}
+
+### Register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "nombre": "Test User",
+    "email": "test@example.com",
+    "password": "password123"
+}
+
+### Products endpoints
+### Get all products
+GET {{baseUrl}}/products
+
+### Get product by ID
+GET {{baseUrl}}/products/1
+
+### Create product (requires admin)
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "nombre": "Nuevo Producto",
+    "descripción": "Descripción del producto",
+    "precio": 99.99,
+    "stock": 100,
+    "category_id": 1,
+    "imagen": "imagen.jpg"
+}
+
+### Update product (requires admin)
+PUT {{baseUrl}}/products/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "nombre": "Producto Actualizado",
+    "descripción": "Nueva descripción",
+    "precio": 149.99,
+    "stock": 50,
+    "category_id": 1,
+    "imagen": "nueva-imagen.jpg"
+}
+
+### Delete product (requires admin)
+DELETE {{baseUrl}}/products/1
+Authorization: Bearer {{authToken}}
+
+### Categories endpoints
+### Get all categories
+GET {{baseUrl}}/categories
+
+### Get category by ID
+GET {{baseUrl}}/categories/1
+
+### Create category (requires admin)
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "nombre": "Nueva Categoría",
+    "descripción": "Descripción de la categoría"
+}
+
+### Update category (requires admin)
+PUT {{baseUrl}}/categories/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "nombre": "Categoría Actualizada",
+    "descripción": "Nueva descripción de la categoría"
+}
+
+### Delete category (requires admin)
+DELETE {{baseUrl}}/categories/1
+Authorization: Bearer {{authToken}}
+
+### Reviews endpoints
+### Get all reviews
+GET {{baseUrl}}/reviews
+
+### Get reviews by product
+GET {{baseUrl}}/reviews/product/1
+
+### Create review (requires auth)
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "product_id": 1,
+    "calificación": 5,
+    "comentario": "Excelente producto"
+}
+
+### Cart endpoints
+### Get user cart
+GET {{baseUrl}}/cart
+Authorization: Bearer {{authToken}}
+
+### Add to cart
+POST {{baseUrl}}/cart
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "product_id": 1,
+    "cantidad": 2
+}
+
+### Update cart item
+PUT {{baseUrl}}/cart/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "cantidad": 3
+}
+
+### Remove from cart
+DELETE {{baseUrl}}/cart/1
+Authorization: Bearer {{authToken}}
+
+### Orders endpoints
+### Get user orders
+GET {{baseUrl}}/orders
+Authorization: Bearer {{authToken}}
+
+### Create order
+POST {{baseUrl}}/orders
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "direccion_envio": "Calle Example 123",
+    "metodo_pago": "tarjeta"
+}
+
+### Get order by ID
+GET {{baseUrl}}/orders/1
+Authorization: Bearer {{authToken}}
+
+### Update order status (requires admin)
+PUT {{baseUrl}}/orders/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "estado": "enviado"
+}
+
+### Users endpoints (admin only)
+### Get all users
+GET {{baseUrl}}/users
+Authorization: Bearer {{authToken}}
+
+### Get user by ID
+GET {{baseUrl}}/users/1
+Authorization: Bearer {{authToken}}
+
+### Update user
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "nombre": "Usuario Actualizado",
+    "email": "updated@example.com",
+    "rol": "user"
+}
+
+### Delete user
+DELETE {{baseUrl}}/users/1
+Authorization: Bearer {{authToken}}
