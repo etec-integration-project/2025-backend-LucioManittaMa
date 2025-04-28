@@ -9,18 +9,33 @@ import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import { errorHandler } from './controllers/errorHandler.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Crear directorio uploads si no existe
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const app = express();
 
-// Conexión a la base de datos
-connectDB().catch((error) => {
-  console.error('Error al conectar a la base de datos:', error.message);
-  process.exit(1);
-});
-
 // Middlewares
-app.use(corsMiddleware); // Middleware para CORS
-app.use(express.json()); // Middleware para parsear JSON
+app.use(corsMiddleware);
+app.use(express.json());
+
+// Servir archivos estáticos (debe ir antes de las rutas)
+app.use('/uploads', express.static(uploadsDir));
+
+// Conexión a la base de datos
+await connectDB().catch((error) => {
+    console.error('Error al conectar a la base de datos:', error.message);
+    process.exit(1);
+});
 
 // Rutas
 app.use('/api/categories', categoryRoutes);
@@ -36,7 +51,7 @@ app.get('/api/test', (req, res) => res.json({ message: 'API funcionando correcta
 
 // Manejo de rutas no encontradas
 app.use((req, res, next) => {
-  res.status(404).json({ message: 'Ruta no encontrada' });
+    res.status(404).json({ message: 'Ruta no encontrada' });
 });
 
 // Middleware de manejo de errores

@@ -1,4 +1,6 @@
 import express from 'express';
+import { upload } from '../controllers/uploadMiddleware.js';
+import { authMiddleware } from '../controllers/authMiddleware.js';
 import {
   getAllProducts,
   getProductById,
@@ -14,8 +16,8 @@ router.get('/', getAllProducts); // Obtener todos los productos
 router.get('/:id', getProductById); // Obtener un producto por ID
 
 // Rutas privadas (requieren autenticación y rol de admin)
-router.post('/', createProduct); // Crear un producto
-router.put('/:id', updateProduct); // Actualizar un producto
-router.delete('/:id', deleteProduct); // Eliminar un producto
+router.post('/', authMiddleware, upload.single('imagen'), createProduct); // Crear un producto
+router.put('/:id', authMiddleware, upload.single('imagen'), updateProduct); // Actualizar un producto
+router.delete('/:id', authMiddleware, deleteProduct); // Eliminar un producto
 
 export default router;

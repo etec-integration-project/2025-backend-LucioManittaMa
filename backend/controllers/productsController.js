@@ -46,13 +46,20 @@ export const createProduct = async (req, res) => {
             });
         }
 
+        // Manejar la imagen
+        let imagenPath = imagen; // Si se proporciona URL
+        if (req.file) {
+            // Si se subió un archivo, usar su path
+            imagenPath = `/uploads/${req.file.filename}`;
+        }
+
         const product = await Product.create({
             nombre,
             descripción,
             precio,
             stock,
             category_id,
-            imagen
+            imagen: imagenPath
         });
 
         res.status(201).json(product);
