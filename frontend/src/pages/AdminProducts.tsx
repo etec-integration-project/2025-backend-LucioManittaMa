@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
-import axios from 'axios';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api';
 
 interface Category {
@@ -13,6 +12,7 @@ interface Category {
 
 export default function AdminProducts() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
@@ -21,19 +21,21 @@ export default function AdminProducts() {
     precio: '',
     stock: '',
     category_id: '',
-    imagen: ''
+    imagen: '', // Para URL
+    imagenFile: null as File | null, // Para archivo
   });
 
-  // Cargar categorías al montar el componente
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_URL}/categories`, {
+        const response = await fetch(`${API_URL}/categories`, {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
-        setCategories(response.data);
+        const data = await response.json();
+        setCategories(data);
       } catch (error) {
         console.error('Error al cargar categorías:', error);
         toast.error('Error al cargar las categorías');
@@ -50,10 +52,12 @@ export default function AdminProducts() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value, files } = e.target as HTMLInputElement;
+    if (name === 'imagenFile' && files) {
+      setFormData({ ...formData, imagenFile: files[0] });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,12 +65,33 @@ export default function AdminProducts() {
     setIsLoading(true);
 
     try {
-      await axios.post(`${API_URL}/products`, formData, {
+      const token = localStorage.getItem('token');
+      const form = new FormData();
+
+      form.append('nombre', formData.nombre);
+      form.append('descripción', formData.descripción);
+      form.append('precio', formData.precio);
+      form.append('stock', formData.stock);
+      form.append('category_id', formData.category_id);
+
+      if (formData.imagenFile) {
+        form.append('imagen', formData.imagenFile);
+      } else if (formData.imagen) {
+        form.append('imagen', formData.imagen); // URL como texto
+      }
+
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
+          'Authorization': `Bearer ${token}`,
+        },
+        body: form
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al conectar con el servidor');
+      }
 
       toast.success('Producto agregado exitosamente');
       setFormData({
@@ -75,14 +100,16 @@ export default function AdminProducts() {
         precio: '',
         stock: '',
         category_id: '',
-        imagen: ''
+        imagen: '',
+        imagenFile: null,
       });
     } catch (error: any) {
       console.error('Error al crear producto:', error);
-      if (error.response?.status === 401) {
-        Navigate({ to: '/login', replace: true });
+      if (error.message === 'Unauthorized') {
+        toast.error('Sesión expirada. Iniciá sesión nuevamente.');
+        navigate('/login', { replace: true });
       } else {
-        toast.error(error.response?.data?.message || 'Error al conectar con el servidor');
+        toast.error(error.message || 'Error al conectar con el servidor');
       }
     } finally {
       setIsLoading(false);
@@ -100,6 +127,7 @@ export default function AdminProducts() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Inputs comunes */}
             <div>
               <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
                 Nombre del Producto
@@ -111,7 +139,7 @@ export default function AdminProducts() {
                 required
                 value={formData.nombre}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
               />
             </div>
 
@@ -126,7 +154,7 @@ export default function AdminProducts() {
                 value={formData.descripción}
                 onChange={handleChange}
                 rows={3}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
               />
             </div>
 
@@ -142,7 +170,7 @@ export default function AdminProducts() {
                 required
                 value={formData.precio}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
               />
             </div>
 
@@ -157,7 +185,7 @@ export default function AdminProducts() {
                 required
                 value={formData.stock}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
               />
             </div>
 
@@ -171,7 +199,7 @@ export default function AdminProducts() {
                 required
                 value={formData.category_id}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
               >
                 <option value="">Seleccionar categoría</option>
                 {categories.map((category) => (
@@ -182,18 +210,33 @@ export default function AdminProducts() {
               </select>
             </div>
 
+            {/* Imagen desde archivo */}
+            <div>
+              <label htmlFor="imagenFile" className="block text-sm font-medium text-gray-700">
+                Subir Imagen
+              </label>
+              <input
+                id="imagenFile"
+                name="imagenFile"
+                type="file"
+                accept="image/*"
+                onChange={handleChange}
+                className="mt-1 block w-full"
+              />
+            </div>
+
+            {/* Imagen desde URL */}
             <div>
               <label htmlFor="imagen" className="block text-sm font-medium text-gray-700">
-                URL de la Imagen
+                O URL de Imagen
               </label>
               <input
                 id="imagen"
                 name="imagen"
                 type="url"
-                required
                 value={formData.imagen}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                className="mt-1 block w-full"
               />
             </div>
 
@@ -201,7 +244,7 @@ export default function AdminProducts() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
               >
                 {isLoading ? 'Agregando...' : 'Agregar Producto'}
               </button>
@@ -211,4 +254,4 @@ export default function AdminProducts() {
       </div>
     </div>
   );
-} 
+}
