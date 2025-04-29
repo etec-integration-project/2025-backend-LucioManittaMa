@@ -15,14 +15,15 @@ export default function AdminProducts() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [uploadType, setUploadType] = useState<'file' | 'url'>('file');
   const [formData, setFormData] = useState({
     nombre: '',
     descripción: '',
     precio: '',
     stock: '',
     category_id: '',
-    imagen: '', // Para URL
-    imagenFile: null as File | null, // Para archivo
+    imagen: '',
+    imagenFile: null as File | null,
   });
 
   useEffect(() => {
@@ -52,11 +53,30 @@ export default function AdminProducts() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value, files } = e.target as HTMLInputElement;
-    if (name === 'imagenFile' && files) {
-      setFormData({ ...formData, imagenFile: files[0] });
-    } else {
-      setFormData({ ...formData, [name]: value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, files } = e.target;
+    
+    if (name === 'imageUrl') {
+      setFormData(prev => ({
+        ...prev,
+        imagen: value,
+        imagenFile: null
+      }));
+    } else if (files && files[0]) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          imagen: reader.result as string,
+          imagenFile: file
+        }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -74,10 +94,10 @@ export default function AdminProducts() {
       form.append('stock', formData.stock);
       form.append('category_id', formData.category_id);
 
-      if (formData.imagenFile) {
+      if (uploadType === 'file' && formData.imagenFile) {
         form.append('imagen', formData.imagenFile);
-      } else if (formData.imagen) {
-        form.append('imagen', formData.imagen); // URL como texto
+      } else if (uploadType === 'url' && formData.imagen) {
+        form.append('imagen', formData.imagen);
       }
 
       const response = await fetch(`${API_URL}/products`, {
@@ -210,34 +230,71 @@ export default function AdminProducts() {
               </select>
             </div>
 
-            {/* Imagen desde archivo */}
             <div>
-              <label htmlFor="imagenFile" className="block text-sm font-medium text-gray-700">
-                Subir Imagen
+              <label className="block text-sm font-medium text-gray-700">
+                Imagen del Producto
               </label>
-              <input
-                id="imagenFile"
-                name="imagenFile"
-                type="file"
-                accept="image/*"
-                onChange={handleChange}
-                className="mt-1 block w-full"
-              />
-            </div>
+              <div className="mt-2 space-y-2">
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setUploadType('file')}
+                    className={`px-3 py-2 text-sm font-medium rounded-md ${
+                      uploadType === 'file'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Subir archivo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadType('url')}
+                    className={`px-3 py-2 text-sm font-medium rounded-md ${
+                      uploadType === 'url'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    URL de imagen
+                  </button>
+                </div>
 
-            {/* Imagen desde URL */}
-            <div>
-              <label htmlFor="imagen" className="block text-sm font-medium text-gray-700">
-                O URL de Imagen
-              </label>
-              <input
-                id="imagen"
-                name="imagen"
-                type="url"
-                value={formData.imagen}
-                onChange={handleChange}
-                className="mt-1 block w-full"
-              />
+                {uploadType === 'file' ? (
+                  <input
+                    id="imagen"
+                    name="imagen"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="mt-1 block w-full"
+                  />
+                ) : (
+                  <input
+                    id="imageUrl"
+                    name="imageUrl"
+                    type="url"
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                    value={formData.imagen}
+                    onChange={handleImageChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  />
+                )}
+
+                {formData.imagen && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.imagen}
+                      alt="Preview"
+                      className="h-32 w-32 object-cover rounded-md"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        img.src = 'https://via.placeholder.com/150?text=Error+de+imagen';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
