@@ -1,4 +1,10 @@
 import { Product } from '../models/index.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * @desc Obtener todos los productos (ruta pública)
@@ -26,48 +32,62 @@ export const getAllProducts = async (req, res) => {
  */
 export const createProduct = async (req, res) => {
     try {
-        // Check if user exists and has admin role
-        if (!req.user) {
-            return res.status(401).json({ message: 'No autenticado' });
-        }
+        console.log('=== Debug Crear Producto ===');
+        console.log('Usuario:', req.user);
+        console.log('Body:', req.body);
+        console.log('Archivo:', req.file);
 
-        if (req.user.rol !== 'admin') {
-            return res.status(403).json({ message: 'No autorizado - Se requiere rol de administrador' });
-        }
+        const { nombre, descripción, precio, stock, category_id } = req.body;
 
-        const { nombre, descripción, precio, stock, category_id, imagen } = req.body;
-
-        // Validate required fields
+        // Validar campos requeridos
         if (!nombre || !precio || !stock || !category_id) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Faltan campos requeridos',
                 required: ['nombre', 'precio', 'stock', 'category_id'],
-                received: req.body 
+                received: req.body
             });
         }
 
         // Manejar la imagen
-        let imagenPath = imagen; // Si se proporciona URL
+        let imagenPath = null;
+        
         if (req.file) {
-            // Si se subió un archivo, usar su path
+            // Si se subió un archivo
             imagenPath = `/uploads/${req.file.filename}`;
+        } else if (req.body.imagen && req.body.imagen.startsWith('data:image')) {
+            // Si es una imagen base64
+            const base64Data = req.body.imagen.replace(/^data:image\/\w+;base64,/, '');
+            const buffer = Buffer.from(base64Data, 'base64');
+            const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
+            const filePath = path.join(__dirname, '../uploads', fileName);
+            
+            fs.writeFileSync(filePath, buffer);
+            imagenPath = `/uploads/${fileName}`;
+        } else if (req.body.imagen) {
+            // Si es una URL
+            imagenPath = req.body.imagen;
         }
 
-        const product = await Product.create({
+        const productData = {
             nombre,
-            descripción,
-            precio,
-            stock,
-            category_id,
+            descripción: descripción || '',
+            precio: parseFloat(precio),
+            stock: parseInt(stock),
+            category_id: parseInt(category_id),
             imagen: imagenPath
-        });
+        };
+
+        console.log('Datos del producto a crear:', productData);
+
+        const product = await Product.create(productData);
+        console.log('Producto creado:', product.toJSON());
 
         res.status(201).json(product);
     } catch (error) {
         console.error('Error al crear producto:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error al crear el producto',
-            error: error.message 
+            error: error.message
         });
     }
 };
