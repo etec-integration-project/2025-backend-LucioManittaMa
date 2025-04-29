@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useFavorites } from '../store/useFavorites';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
+import { API_URL } from '../config/api';
 
 interface ProductCardProps {
   product: Product;
@@ -19,6 +20,22 @@ export default function ProductCard({ product }: ProductCardProps) {
   const token = localStorage.getItem('token');
   const { addItem, removeItem, isFavorite } = useFavorites();
   const isProductFavorite = isFavorite(product.product_id);
+
+  const getImageUrl = (imageUrl: string | null) => {
+    if (!imageUrl) return 'https://via.placeholder.com/400?text=No+Image';
+    
+    // Si la imagen es una URL completa (http/https)
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    // Si la imagen es una ruta relativa (/uploads/...)
+    if (imageUrl.startsWith('/uploads')) {
+      return `${API_URL}${imageUrl}`;
+    }
+    
+    return 'https://via.placeholder.com/400?text=Invalid+Image';
+  };
 
   const handleAction = () => {
     if (!token) {
@@ -55,12 +72,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="relative">
         <img
-          src={product.imagen || 'https://via.placeholder.com/400?text=No+Image'}
+          src={getImageUrl(product.imagen)}
           alt={product.nombre}
           className="w-full h-64 object-cover"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.src = 'https://via.placeholder.com/400?text=Error+Loading+Image';
+            console.log('Error loading image:', product.imagen);
           }}
         />
         

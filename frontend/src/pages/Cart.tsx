@@ -1,13 +1,28 @@
 import { Trash2 } from 'lucide-react';
 import { useCart } from '../store/useCart';
 import { useNavigate } from 'react-router-dom';
-import { fetchWithAuth } from '../config/api';
+import { fetchWithAuth, API_URL } from '../config/api';
 import { toast } from 'react-hot-toast';
 
 export default function Cart() {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity } = useCart();
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  // Añadir la misma función getImageUrl que usamos en ProductCard
+  const getImageUrl = (imageUrl: string | null) => {
+    if (!imageUrl) return 'https://via.placeholder.com/400?text=No+Image';
+    
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    if (imageUrl.startsWith('/uploads')) {
+      return `${API_URL}${imageUrl}`;
+    }
+    
+    return 'https://via.placeholder.com/400?text=Invalid+Image';
+  };
 
   const handleProceedToCheckout = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -36,9 +51,13 @@ export default function Cart() {
           {items.map((item) => (
             <div key={`${item.id}-${item.selectedSize}`} className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-md mb-4">
               <img
-                src={item.image}
+                src={getImageUrl(item.image)}
                 alt={item.name}
                 className="w-24 h-24 object-cover rounded-md"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://via.placeholder.com/400?text=Error+Loading+Image';
+                }}
               />
               
               <div className="flex-1">
