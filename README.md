@@ -40,8 +40,8 @@ Página web de venta de zapatillas de moda urbana. Centraliza productos de disti
 ### Pasos
 
 ```bash
-git clone https://github.com/tu-usuario/urban-sneakers.git
-cd urban-sneakers
+git clone https://github.com/etec-integration-project/2025-backend-LucioManittaMa
+cd 2025-backend-LucioManittaMa
 docker compose up
 ```
 
@@ -75,6 +75,6 @@ Este proyecto es de acceso cerrado y no está abierto a contribuciones externas 
 
 ## ✨ Créditos
 
-Gracias a [Daniel Quinteros](https://github.com/), profesor de Proyecto Integrador, por su guía y acompañamiento.
+Gracias a [Daniel Quinteros](https://github.com/dqmdz), profesor de Proyecto Integrador, por su guía y acompañamiento.
 
 ---
