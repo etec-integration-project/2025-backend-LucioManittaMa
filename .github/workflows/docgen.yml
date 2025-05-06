@@ -25,11 +25,13 @@ jobs:
         run: python scripts/generate_docs.py
       - name: Generar documentación para Wiki
         run: python scripts/generate_wiki.py
-      - name: Subir archivos a la Wiki (EndBug)
-        uses: EndBug/add-and-commit@v9
-        with:
-          add: 'wiki/*'
-          message: 'docs(wiki): actualización automática de la Wiki'
-          cwd: wiki
-          author_name: LucioManittaMa
-          author_email: lucio.manitta@gmail.com
+      - name: Subir archivos a la Wiki real
+        run: |
+          git config user.name "LucioManittaMa"
+          git config user.email "mazzaresilu@gmail.com"
+          git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git" wiki-repo
+          cp -r wiki/* wiki-repo/
+          cd wiki-repo
+          git add .
+          git commit -m "docs(wiki): actualización automática de la Wiki" || echo "Nada para commitear"
+          git push
