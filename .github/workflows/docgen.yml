@@ -25,15 +25,6 @@ jobs:
         run: python scripts/generate_docs.py
       - name: Generar documentación para Wiki
         run: python scripts/generate_wiki.py
-      - name: Crear Pull Request automático
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "docs: actualización automática de documentación"
-          branch: docs-auto
-          base: main
-          title: "Actualización automática de documentación"
-          body: "Este PR actualiza la documentación generada automáticamente tras cambios en issues, PRs o milestones."
       - name: Subir cambios a la Wiki
         if: github.ref == 'refs/heads/main'
         uses: docker://decathlon/wiki-page-creator-action:latest
