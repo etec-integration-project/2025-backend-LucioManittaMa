@@ -26,11 +26,13 @@ jobs:
       - name: Generar documentación para Wiki
         run: python scripts/generate_wiki.py
       - name: Subir cambios de documentación (Pages)
+        if: github.ref == 'refs/heads/main'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "docs: actualización automática de documentación"
-          branch: ${{ github.ref }}
+          branch: main
       - name: Subir cambios a la Wiki
+        if: github.ref == 'refs/heads/main'
         uses: docker://decathlon/wiki-page-creator-action:latest
         with:
           path: wiki
