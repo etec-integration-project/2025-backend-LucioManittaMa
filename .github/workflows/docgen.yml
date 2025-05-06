@@ -25,11 +25,11 @@ jobs:
         run: python scripts/generate_docs.py
       - name: Generar documentación para Wiki
         run: python scripts/generate_wiki.py
-      - name: Subir cambios a la Wiki
-        if: github.ref == 'refs/heads/main'
-        uses: docker://decathlon/wiki-page-creator-action:latest
+      - name: Subir archivos a la Wiki (EndBug)
+        uses: EndBug/add-and-commit@v9
         with:
-          path: wiki
-          token: ${{ secrets.GITHUB_TOKEN }}
-          mail: mazzaresilu@gmail.com
-          username: LucioManittaMa
+          add: 'wiki/*'
+          message: 'docs(wiki): actualización automática de la Wiki'
+          cwd: wiki
+          author_name: LucioManittaMa
+          author_email: lucio.manitta@gmail.com
