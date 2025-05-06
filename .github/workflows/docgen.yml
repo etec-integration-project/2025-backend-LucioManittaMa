@@ -31,3 +31,5 @@ jobs:
         with:
           path: wiki
           token: ${{ secrets.GITHUB_TOKEN }}
+          mail: mazzaresilu@gmail.com
+          username: LucioManittaMa
