@@ -2,7 +2,7 @@ import json
 import os
 import yaml
 
-with open('.github/doc-config.yml') as f:
+with open('.github/workflows/doc-config.yml') as f:
     config = yaml.safe_load(f)
 
 output_dir = config.get('output_dir', 'docs/')
