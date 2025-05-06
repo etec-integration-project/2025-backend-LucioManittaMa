@@ -2,7 +2,7 @@ import json
 import os
 import yaml
 
-with open('.github/doc-config.yml') as f:
+with open('.github/workflows/doc-config.yml') as f:
     config = yaml.safe_load(f)
 
 def load_json(filename):
