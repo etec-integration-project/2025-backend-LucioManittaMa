@@ -1,0 +1,37 @@
+name: Documentación Automática
+
+on:
+  issues:
+    types: [opened, closed, edited, labeled, unlabeled]
+  pull_request:
+    types: [opened, closed, edited, labeled, unlabeled, merged]
+  milestone:
+    types: [created, closed, edited, opened]
+  workflow_dispatch:
+
+jobs:
+  docgen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Instalar dependencias
+        run: pip install pyyaml requests
+      - name: Obtener datos de GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scripts/fetch_github_data.py
+      - name: Generar documentación para Pages
+        run: python scripts/generate_docs.py
+      - name: Generar documentación para Wiki
+        run: python scripts/generate_wiki.py
+      - name: Subir cambios de documentación (Pages)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: actualización automática de documentación"
+          branch: ${{ github.ref }}
+      - name: Subir cambios a la Wiki
+        uses: docker://decathlon/wiki-page-creator-action:latest
+        with:
+          path: wiki
+          token: ${{ secrets.GITHUB_TOKEN }}
