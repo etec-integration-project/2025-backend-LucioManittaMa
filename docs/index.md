@@ -1,33 +1,29 @@
-# 📄 Documentación de Progreso
+---
+layout: default
+---
 
-## Milestones
-### Documentacion
+# UM Tesorería MercadoPago Service
 
-- Estado: open
-- Vencimiento: None
-- Progreso: 100% (3/3 issues cerrados)
+Bienvenido a la documentación del servicio de MercadoPago de UM Tesorería.
 
+## Descripción
 
-## Issues por etiqueta
+Este es el servicio de integración con MercadoPago para la arquitectura de microservicios de UM Tesorería. 
+Proporciona funcionalidades para procesar pagos, gestionar preferencias de pago y manejar webhooks de MercadoPago.
 
-## Changelog (Issues cerrados)
-- Solicitud: Redacción de README.md según estándares internacionales (#8)
-- Agregar Documentación Automática Basada en Cambios en Milestones, Issues y Pull Requests de GitHub (#6)
+## Navegación
 
-## Notas de Lanzamiento (PRs fusionados)
-- Cambiando commit automatico (#18)
-- Solucionando error de referencia (#17)
-- Update generate_wiki.py (#16)
-- Solucionando problemas con documentacion automatica (#15)
-- Agregando documentacion automatica (#14)
-- Agregando enlaces README.md (#13)
-- Solucionando error nombre carpeta (#12)
-- Agregando README.md (#11)
-- Delete backend/README.md (#10)
-- Agregando README.md (#9)
-- Intentando solucionar errores (#7)
-- No solucione una bosta (#5)
-- Reparando CORS (#4)
-- Solucionando problemas con GET POST (#3)
-- Dockerizando frontend (#2)
-- dockerizando (#1)
+- [Documentación Detallada del Proyecto](project-documentation.html) - Documentación generada automáticamente con:
+  - Estado actual de los Milestones
+  - Lista de Issues activos y cerrados
+  - Historial de cambios
+
+## Estado del Proyecto
+
+El estado actual del proyecto y sus avances se pueden consultar en la [Documentación Detallada](project-documentation.html).
+
+## Enlaces Útiles
+
+- [Repositorio en GitHub](https://github.com/UM-services/UM.tesoreria.mercadopago-service)
+- [Wiki del Proyecto](https://github.com/UM-services/UM.tesoreria.mercadopago-service/wiki)
+- [Documentación de MercadoPago](https://www.mercadopago.com.ar/developers/es/reference) 
