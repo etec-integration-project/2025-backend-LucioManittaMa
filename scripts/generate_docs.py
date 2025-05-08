@@ -1,63 +1,87 @@
 import json
+from datetime import datetime
+from jinja2 import Template
 import os
-import yaml
 
-with open('.github/workflows/doc-config.yml') as f:
-    config = yaml.safe_load(f)
+def load_data():
+    with open('data/issues.json', 'r') as f:
+        issues = json.load(f)
+    with open('data/milestones.json', 'r') as f:
+        milestones = json.load(f)
+    return issues, milestones
 
-output_dir = config.get('output_dir', 'docs/')
-os.makedirs(output_dir, exist_ok=True)
+def generate_docs():
+    issues, milestones = load_data()
+    
+    # Template para la documentación
+    template_str = """---
+layout: default
+title: Documentación Detallada
+---
 
-def load_json(filename):
-    with open(filename) as f:
-        return json.load(f)
+# Documentación Detallada del Proyecto
 
-milestones = load_json('milestones.json')
-issues = load_json('issues.json')
-prs = load_json('prs.json')
+_Última actualización: {{ current_date }}_
 
-def milestone_summary(ms):
-    total = ms['open_issues'] + ms['closed_issues']
-    percent = int((ms['closed_issues'] / total) * 100) if total else 0
-    return f"### {ms['title']}\n{ms.get('description','')}\n- Estado: {ms['state']}\n- Vencimiento: {ms.get('due_on','N/A')}\n- Progreso: {percent}% ({ms['closed_issues']}/{total} issues cerrados)\n"
+## Resumen de Milestones
 
-def group_issues_by_label(issues, include_labels, exclude_labels):
-    groups = {}
-    for issue in issues:
-        if 'pull_request' in issue:
-            continue  # skip PRs
-        labels = [l['name'] for l in issue['labels']]
-        if any(l in exclude_labels for l in labels):
-            continue
-        for label in labels:
-            if label in include_labels:
-                groups.setdefault(label, []).append(issue)
-    return groups
+| Milestone | Estado | Fecha Límite |
+|-----------|--------|--------------|
+{% for milestone in milestones %}
+| {{ milestone.title }} | {{ milestone.state }} | {{ milestone.due_on if milestone.due_on else 'No definida' }} |
+{% endfor %}
 
-def changelog(issues):
-    closed = [i for i in issues if i['state'] == 'closed' and 'pull_request' not in i]
-    return "\n".join([f"- {i['title']} (#{i['number']})" for i in closed])
+## Detalles de Milestones
 
-def release_notes(prs):
-    merged = [pr for pr in prs if pr.get('merged_at')]
-    return "\n".join([f"- {pr['title']} (#{pr['number']})" for pr in merged])
+{% for milestone in milestones %}
+### {{ milestone.title }}
+**Estado:** {{ milestone.state }}
+**Descripción:** {{ milestone.description }}
+{% if milestone.due_on %}**Fecha límite:** {{ milestone.due_on }}{% endif %}
 
-md = "# 📄 Documentación de Progreso\n\n## Milestones\n"
-for ms in milestones:
-    md += milestone_summary(ms) + "\n"
+---
+{% endfor %}
 
-md += "\n## Issues por etiqueta\n"
-groups = group_issues_by_label(issues, config['include_labels'], config['exclude_labels'])
-for label, group in groups.items():
-    md += f"\n### {label}\n"
-    for issue in group:
-        md += f"- {issue['title']} (#{issue['number']}) [{issue['state']}]\n"
+## Issues Activos
 
-md += "\n## Changelog (Issues cerrados)\n"
-md += changelog(issues)
+{% for issue in issues if issue.state == 'open' %}
+### #{{ issue.number }}: {{ issue.title }}
+**Estado:** {{ issue.state }}
+**Creado:** {{ issue.created_at }}
+{% if issue.milestone %}**Milestone:** {{ issue.milestone }}{% endif %}
+{% if issue.labels %}**Labels:** {{ issue.labels|join(', ') }}{% endif %}
 
-md += "\n\n## Notas de Lanzamiento (PRs fusionados)\n"
-md += release_notes(prs)
+{{ issue.body }}
 
-with open(os.path.join(output_dir, 'index.md'), 'w') as f:
-    f.write(md)
+---
+{% endfor %}
+
+## Issues Cerrados
+
+{% for issue in issues if issue.state == 'closed' %}
+### #{{ issue.number }}: {{ issue.title }}
+**Estado:** {{ issue.state }}
+**Creado:** {{ issue.created_at }}
+**Cerrado:** {{ issue.closed_at }}
+{% if issue.milestone %}**Milestone:** {{ issue.milestone }}{% endif %}
+{% if issue.labels %}**Labels:** {{ issue.labels|join(', ') }}{% endif %}
+
+{{ issue.body }}
+
+---
+{% endfor %}
+"""
+    
+    template = Template(template_str)
+    doc_content = template.render(
+        current_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        issues=issues,
+        milestones=milestones
+    )
+    
+    # Guardar la documentación
+    with open('docs/project-documentation.md', 'w') as f:
+        f.write(doc_content)
+
+if __name__ == '__main__':
+    generate_docs() 
