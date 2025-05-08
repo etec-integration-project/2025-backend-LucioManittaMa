@@ -16,10 +16,10 @@ def generate_docs():
     # Template para la documentación
     template_str = """---
 layout: default
-title: Documentación Detallada
+title: Documentación Detallada - Urban Sneakers
 ---
 
-# Documentación Detallada del Proyecto
+# Documentación Detallada del Proyecto Urban Sneakers
 
 _Última actualización: {{ current_date }}_
 
