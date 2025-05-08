@@ -298,11 +298,6 @@ Bienvenido a la Wiki de Urban Sneakers, tu ecommerce de zapatillas urbanas.
 - `tailwind.config.js`: Configuración de Tailwind
 - `tsconfig.json`: Configuración de TypeScript
 
-## Scripts Disponibles
-- `npm run dev`: Inicia el servidor de desarrollo
-- `npm run build`: Construye la aplicación para producción
-- `npm run preview`: Previsualiza la versión de producción
-
 ## Componentes Principales
 - Navegación
 - Catálogo de Productos
@@ -333,9 +328,6 @@ Bienvenido a la Wiki de Urban Sneakers, tu ecommerce de zapatillas urbanas.
 - `/api/users`: Gestión de usuarios
 - `/api/orders`: Gestión de órdenes
 
-## Scripts Disponibles
-- `npm start`: Inicia el servidor
-- `npm run dev`: Inicia el servidor en modo desarrollo
 """)
 
         return True
