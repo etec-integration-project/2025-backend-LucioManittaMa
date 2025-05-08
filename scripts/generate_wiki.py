@@ -203,20 +203,22 @@ def generate_wiki_content(wiki_dir: Path, data_dir: Path):
     try:
         # Home.md
         with open(wiki_dir / 'Home.md', 'w', encoding='utf-8') as f:
-            f.write("""# UM Tesorería MercadoPago Service Wiki
+            f.write("""# Urban Sneakers Web Page Wiki
 
-Bienvenido a la Wiki del servicio de integración con MercadoPago de UM Tesorería.
+Bienvenido a la Wiki de Urban Sneakers, tu ecommerce de zapatillas urbanas.
 
 ## Navegación Rápida
 
 - [[Milestones]]
 - [[Issues-Activos]]
 - [[Issues-Cerrados]]
+- [[Frontend]]
+- [[Backend]]
 """)
 
         # Milestones.md
         with open(wiki_dir / 'Milestones.md', 'w', encoding='utf-8') as f:
-            f.write("# Milestones del Servicio MercadoPago\n\n")
+            f.write("# Milestones de Urban Sneakers\n\n")
             for ms in milestones:
                 f.write(f"## {ms['title']}\n")
                 f.write(f"**Estado:** {ms['state']}\n\n")
@@ -232,27 +234,22 @@ Bienvenido a la Wiki del servicio de integración con MercadoPago de UM Tesorer�
             if not labels_data:
                 return []
             if isinstance(labels_data, list):
-                # Si es una lista de diccionarios
                 if all(isinstance(label, dict) for label in labels_data):
                     return [label.get('name', '') for label in labels_data]
-                # Si es una lista de strings
                 return labels_data
-            # Si es un string único
             if isinstance(labels_data, str):
                 return [labels_data]
             return []
 
         active_issues = [i for i in issues if i['state'] == 'open']
         with open(wiki_dir / 'Issues-Activos.md', 'w', encoding='utf-8') as f:
-            f.write("# Issues Activos - Servicio MercadoPago\n\n")
+            f.write("# Issues Activos - Urban Sneakers\n\n")
             for issue in active_issues:
                 f.write(f"## #{issue['number']}: {issue['title']}\n")
                 f.write(f"**Creado:** {issue['created_at']}\n\n")
                 if issue.get('milestone'):
-                    # Si milestone es un diccionario
                     if isinstance(issue['milestone'], dict):
                         milestone_title = issue['milestone'].get('title', 'Sin título')
-                    # Si milestone es un string
                     else:
                         milestone_title = issue['milestone']
                     f.write(f"**Milestone:** {milestone_title}\n\n")
@@ -266,16 +263,14 @@ Bienvenido a la Wiki del servicio de integración con MercadoPago de UM Tesorer�
         # Issues-Cerrados.md
         closed_issues = [i for i in issues if i['state'] == 'closed']
         with open(wiki_dir / 'Issues-Cerrados.md', 'w', encoding='utf-8') as f:
-            f.write("# Issues Cerrados - Servicio MercadoPago\n\n")
+            f.write("# Issues Cerrados - Urban Sneakers\n\n")
             for issue in closed_issues:
                 f.write(f"## #{issue['number']}: {issue['title']}\n")
                 f.write(f"**Creado:** {issue['created_at']}\n")
                 f.write(f"**Cerrado:** {issue.get('closed_at', 'Desconocido')}\n\n")
                 if issue.get('milestone'):
-                    # Si milestone es un diccionario
                     if isinstance(issue['milestone'], dict):
                         milestone_title = issue['milestone'].get('title', 'Sin título')
-                    # Si milestone es un string
                     else:
                         milestone_title = issue['milestone']
                     f.write(f"**Milestone:** {milestone_title}\n\n")
@@ -286,9 +281,66 @@ Bienvenido a la Wiki del servicio de integración con MercadoPago de UM Tesorer�
                 body = issue.get('body') or 'Sin descripción'
                 f.write(f"{body}\n\n---\n\n")
 
+        # Frontend.md
+        with open(wiki_dir / 'Frontend.md', 'w', encoding='utf-8') as f:
+            f.write("""# Frontend - Urban Sneakers
+
+## Tecnologías Utilizadas
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
+
+## Estructura del Proyecto
+- `/src`: Código fuente
+- `/public`: Archivos estáticos
+- `vite.config.ts`: Configuración de Vite
+- `tailwind.config.js`: Configuración de Tailwind
+- `tsconfig.json`: Configuración de TypeScript
+
+## Scripts Disponibles
+- `npm run dev`: Inicia el servidor de desarrollo
+- `npm run build`: Construye la aplicación para producción
+- `npm run preview`: Previsualiza la versión de producción
+
+## Componentes Principales
+- Navegación
+- Catálogo de Productos
+- Carrito de Compras
+- Perfil de Usuario
+""")
+
+        # Backend.md
+        with open(wiki_dir / 'Backend.md', 'w', encoding='utf-8') as f:
+            f.write("""# Backend - Urban Sneakers
+
+## Tecnologías Utilizadas
+- Node.js
+- Express
+- MongoDB
+- JWT para autenticación
+
+## Estructura del Proyecto
+- `/controllers`: Controladores de la aplicación
+- `/models`: Modelos de datos
+- `/routes`: Rutas de la API
+- `/config`: Configuraciones
+- `/uploads`: Archivos subidos
+
+## Endpoints Principales
+- `/api/auth`: Autenticación
+- `/api/products`: Gestión de productos
+- `/api/users`: Gestión de usuarios
+- `/api/orders`: Gestión de órdenes
+
+## Scripts Disponibles
+- `npm start`: Inicia el servidor
+- `npm run dev`: Inicia el servidor en modo desarrollo
+""")
+
         return True
     except IOError as e:
-        print(f"Error escribiendo archivos de la wiki del Servicio MercadoPago: {e}")
+        print(f"Error escribiendo archivos de la wiki de Urban Sneakers: {e}")
         return False
 
 def verify_json_content(file_path):
