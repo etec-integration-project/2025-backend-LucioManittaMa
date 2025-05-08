@@ -2,14 +2,14 @@
 layout: default
 ---
 
-# UM Tesorería MercadoPago Service
+# Urban Sneakers Web Page
 
-Bienvenido a la documentación del servicio de MercadoPago de UM Tesorería.
+Bienvenido a la documentación de la pagina de Urban Sneakers.
 
 ## Descripción
 
-Este es el servicio de integración con MercadoPago para la arquitectura de microservicios de UM Tesorería. 
-Proporciona funcionalidades para procesar pagos, gestionar preferencias de pago y manejar webhooks de MercadoPago.
+Este es la pagina de Urban Sneakers un ecommerce de venta de zapatillas de moda urbana . 
+Proporciona funcionalidades para gestionar usuarios, autenticación y manejo de datos de la aplicación.
 
 ## Navegación
 
@@ -24,6 +24,5 @@ El estado actual del proyecto y sus avances se pueden consultar en la [Documenta
 
 ## Enlaces Útiles
 
-- [Repositorio en GitHub](https://github.com/UM-services/UM.tesoreria.mercadopago-service)
-- [Wiki del Proyecto](https://github.com/UM-services/UM.tesoreria.mercadopago-service/wiki)
-- [Documentación de MercadoPago](https://www.mercadopago.com.ar/developers/es/reference) 
+- [Repositorio en GitHub](https://github.com/etec-integration-project/2025-backend-LucioManittaMa)
+- [Wiki del Proyecto](https://github.com/etec-integration-project/2025-backend-LucioManittaMa/wiki)

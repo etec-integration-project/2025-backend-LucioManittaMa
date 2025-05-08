@@ -1,4 +1,4 @@
-name: Deploy MercadoPago Service Documentation
+name: Deploy UrbanSneakers Service Documentation
 
 on:
   schedule:
@@ -28,10 +28,10 @@ env:
 
 jobs:
   build:
-    name: Build MercadoPago Documentation
+    name: Build UrbanSneakers Documentation
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout MercadoPago Service
+      - name: Checkout UrbanSneakers Service
         uses: actions/checkout@v4
       
       - name: Set up Python
@@ -44,17 +44,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install PyGithub markdown2 jinja2 requests
 
-      - name: Fetch MercadoPago Service Issues and Milestones
+      - name: Fetch UrbanSneakers Service Issues and Milestones
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python scripts/fetch_github_data.py
 
-      - name: Generate MercadoPago Documentation
+      - name: Generate UrbanSneakers Documentation
         run: |
           python scripts/generate_docs.py
 
-      - name: Generate MercadoPago Wiki
+      - name: Generate UrbanSneakers Wiki
         env:
           GITHUB_TOKEN: ${{ secrets.WIKI_TOKEN }}
         run: |
@@ -77,13 +77,13 @@ jobs:
           path: ./_site
       
   deploy:
-    name: Deploy MercadoPago Documentation
+    name: Deploy UrbanSneakers Documentation
     needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy MercadoPago Documentation to GitHub Pages
+      - name: Deploy UrbanSneakers Documentation to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4 
