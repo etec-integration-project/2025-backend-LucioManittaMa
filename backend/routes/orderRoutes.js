@@ -4,7 +4,13 @@
  */
 
 import express from 'express';
-import { createOrder, getOrderById, getOrders, updateOrderStatus, deleteOrder } from '../controllers/ordersController.js';
+import { 
+    createOrder, 
+    getAllOrders, 
+    getUserOrders, 
+    updateOrderStatus,
+    getOrderById
+} from '../controllers/ordersController.js';
 import { authMiddleware } from '../controllers/authMiddleware.js';
 
 const router = express.Router();
@@ -13,53 +19,35 @@ const router = express.Router();
  * @route POST /api/orders
  * @description Crear una nueva orden.
  * @access Privado (requiere autenticación)
- * @param {Object} req.body - Datos de la nueva orden.
- * @returns {Object} - Orden creada.
- * @middleware authMiddleware, validateData(orderSchema)
  */
 router.post('/', authMiddleware, createOrder);
 
 /**
- * @route GET /api/orders/:id
- * @description Obtener una orden por su ID.
- * @access Privado (requiere autenticación)
- * @param {string} req.params.id - ID de la orden.
- * @returns {Object} - Datos de la orden.
- * @middleware authMiddleware
+ * @route GET /api/orders
+ * @description Obtener todas las órdenes (solo admin).
+ * @access Privado/Admin (requiere autenticación y rol de admin)
  */
+router.get('/', authMiddleware, getAllOrders);
 
-router.get('/', authMiddleware, getOrders);
+/**
+ * @route GET /api/orders/me
+ * @description Obtener las órdenes del usuario autenticado.
+ * @access Privado (requiere autenticación)
+ */
+router.get('/me', authMiddleware, getUserOrders);
 
 /**
  * @route GET /api/orders/:id
  * @description Obtener una orden por su ID.
  * @access Privado (requiere autenticación)
- * @param {string} req.params.id - ID de la orden.
- * @returns {Object} - Datos de la orden.
- * @middleware authMiddleware
  */
-
 router.get('/:id', authMiddleware, getOrderById);
 
 /**
- * @route PUT /api/orders/:id
- * @description Actualizar el estado de una orden.
- * @access Privado (requiere autenticación)
- * @param {string} req.params.id - ID de la orden.
- * @param {Object} req.body - Nuevos datos de la orden.
- * @returns {Object} - Orden actualizada.
- * @middleware authMiddleware, validateData(orderSchema)
+ * @route PATCH /api/orders/:id
+ * @description Actualizar el estado de una orden (solo admin).
+ * @access Privado/Admin (requiere autenticación y rol de admin)
  */
-router.put('/:id', authMiddleware, updateOrderStatus);
-
-/**
- * @route DELETE /api/orders/:id
- * @description Eliminar una orden.
- * @access Privado (requiere autenticación)
- * @param {string} req.params.id - ID de la orden a eliminar.
- * @returns {Object} - Mensaje de éxito.
- * @middleware authMiddleware
- */
-router.delete('/:id', authMiddleware, deleteOrder);
+router.patch('/:id', authMiddleware, updateOrderStatus);
 
 export default router;

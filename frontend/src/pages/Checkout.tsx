@@ -3,12 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '../config/api';
 import { toast } from 'react-hot-toast';
 import { useCart } from '../store/useCart';
+import { CartItem } from '../types';
+
+interface CheckoutData {
+  items: CartItem[];
+  total: number;
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(false);
-  const [checkoutData, setCheckoutData] = useState<any>(null);
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
   
   const [formData, setFormData] = useState({
     direccionEnvio: '',
@@ -30,18 +36,23 @@ export default function Checkout() {
     setIsLoading(true);
 
     try {
+      console.log('Datos de checkout:', checkoutData);
+      
       const orderData = {
-        items: checkoutData.items.map((item: any) => ({
+        items: checkoutData?.items.map((item) => ({
           product_id: item.id,
           cantidad: item.quantity,
-          precio: item.price
+          precio: item.price,
+          talla: item.selectedSize
         })),
         estado: 'pendiente',
         fecha: new Date().toISOString(),
-        total: checkoutData.total,
+        total: checkoutData?.total,
         direccionEnvio: formData.direccionEnvio,
         metodoPago: formData.metodoPago
       };
+
+      console.log('Enviando datos de orden:', orderData);
 
       const response = await fetchWithAuth('/orders', {
         method: 'POST',
@@ -123,16 +134,16 @@ export default function Checkout() {
           <h3 className="text-xl font-semibold mb-4">Resumen del pedido</h3>
           <div className="bg-gray-50 p-6 rounded-lg">
             {/* Mostrar items y total */}
-            {checkoutData.items.map((item: any) => (
+            {checkoutData.items.map((item) => (
               <div key={item.id} className="flex justify-between mb-2">
                 <span>{item.name} x {item.quantity}</span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                <span>${(Number(item.price) * Number(item.quantity)).toFixed(2)}</span>
               </div>
             ))}
             <div className="border-t mt-4 pt-4">
               <div className="flex justify-between font-bold">
                 <span>Total</span>
-                <span>${checkoutData.total.toFixed(2)}</span>
+                <span>${Number(checkoutData.total).toFixed(2)}</span>
               </div>
             </div>
           </div>

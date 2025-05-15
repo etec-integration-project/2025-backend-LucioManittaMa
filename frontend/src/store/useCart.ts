@@ -4,8 +4,8 @@ import { CartItem } from '../types';
 interface CartStore {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (id: number, size: number) => void;
-  updateQuantity: (id: number, size: number, quantity: number) => void;
+  removeItem: (itemId: number) => void;
+  updateQuantity: (itemId: number, newQuantity: number) => void;
   clearCart: () => void;
 }
 
@@ -27,18 +27,16 @@ export const useCart = create<CartStore>((set) => ({
       }
       return { items: [...state.items, item] };
     }),
-  removeItem: (id, size) =>
+  removeItem: (itemId) =>
     set((state) => ({
       items: state.items.filter(
-        (i) => !(i.id === id && i.selectedSize === size)
+        (i) => i.id !== itemId
       ),
     })),
-  updateQuantity: (id, size, quantity) =>
+  updateQuantity: (itemId, newQuantity) =>
     set((state) => ({
       items: state.items.map((item) =>
-        item.id === id && item.selectedSize === size
-          ? { ...item, quantity }
-          : item
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
       ),
     })),
   clearCart: () => set({ items: [] }),

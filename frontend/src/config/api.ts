@@ -1,5 +1,23 @@
 export const API_URL = 'http://localhost:81/api';
 
+// Verificar si la sesión ha expirado o no es válida
+export const handleSessionExpiration = (status: number): boolean => {
+  if (status === 401 || status === 403) {
+    // Almacenar la URL actual antes de redirigir al login
+    const currentPath = window.location.pathname;
+    if (currentPath !== '/login' && currentPath !== '/register') {
+      sessionStorage.setItem('redirectAfterLogin', currentPath);
+    }
+    
+    // Opcionalmente, mostrar un mensaje al usuario
+    console.warn('Sesión expirada o no autorizada');
+    
+    // No redirigir automáticamente, permitir que el contexto de autenticación lo maneje
+    return true;
+  }
+  return false;
+};
+
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -12,23 +30,30 @@ export const getAuthHeaders = () => {
   };
 };
 
-// Función helper para hacer peticiones autenticadas
+// Función helper para hacer peticiones autenticadas con manejo mejorado de sesiones
 export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
   const headers = getAuthHeaders();
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...headers,
-      ...(options.headers || {})
+  const url = `${API_URL}${endpoint}`;
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...headers,
+        ...(options.headers || {})
+      }
+    });
+
+    // Verificar si hay problemas de autenticación
+    if (handleSessionExpiration(response.status)) {
+      // Opcional: intentar refrescar el token si existe una función para ello
+      // Por ahora solo arrojamos un error
+      throw new Error('Sesión expirada');
     }
-  });
 
-  if (response.status === 401) {
-    // Token expirado o inválido
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-    throw new Error('Sesión expirada');
+    return response;
+  } catch (error) {
+    console.error(`Error en la petición a ${url}:`, error);
+    throw error;
   }
-
-  return response;
 };

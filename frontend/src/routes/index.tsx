@@ -4,6 +4,8 @@ import Login from '../pages/Login';
 import Home from '../pages/Home';
 import Products from '../pages/Products';
 import AdminProducts from '../pages/AdminProducts';
+import AdminProductList from '../pages/AdminProductList';
+import AdminOrders from '../pages/AdminOrders';
 import Cart from '../pages/Cart';
 import Favorites from '../pages/Favorites';
 import Account from '../pages/Account';
@@ -29,6 +31,8 @@ export default function AppRoutes() {
       <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
       <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
       <Route path="/admin/productos" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
+      <Route path="/admin/productos/lista" element={<ProtectedRoute><AdminProductList /></ProtectedRoute>} />
+      <Route path="/admin/ordenes" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

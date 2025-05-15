@@ -4,11 +4,11 @@ FROM node:18-alpine AS build
 # Establecer el directorio de trabajo
 WORKDIR /app
 
-# Copiar los archivos necesarios para instalar dependencias
-COPY package.json package-lock.json ./
+# Copiar solo los archivos necesarios para instalar dependencias
+COPY package.json package-lock.json* ./
 
-# Instalar dependencias
-RUN npm install
+# Instalar dependencias con npm (usando npm install con opciones para reducir el tiempo)
+RUN npm install --no-audit --no-fund
 
 # Copiar el resto del código fuente
 COPY . .
@@ -22,8 +22,8 @@ FROM nginx:alpine
 # Copiar el build generado en la etapa anterior al directorio de Nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copiar un archivo de configuración de Nginx personalizado (opcional)
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar la configuración de Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Exponer el puerto 80
 EXPOSE 80

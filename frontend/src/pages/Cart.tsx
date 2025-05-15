@@ -3,11 +3,12 @@ import { useCart } from '../store/useCart';
 import { useNavigate } from 'react-router-dom';
 import { fetchWithAuth, API_URL } from '../config/api';
 import { toast } from 'react-hot-toast';
+import { CartItem } from '../types';
 
 export default function Cart() {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity } = useCart();
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce((sum: number, item: CartItem) => sum + Number(item.price) * Number(item.quantity), 0);
 
   // Añadir la misma función getImageUrl que usamos en ProductCard
   const getImageUrl = (imageUrl: string | null) => {
@@ -46,40 +47,43 @@ export default function Cart() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h2 className="text-3xl font-bold text-gray-900 mb-8">Carrito de Compras</h2>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2 space-y-4">
           {items.map((item) => (
-            <div key={`${item.id}-${item.selectedSize}`} className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-md mb-4">
-              <img
-                src={getImageUrl(item.image)}
-                alt={item.name}
-                className="w-24 h-24 object-cover rounded-md"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'https://via.placeholder.com/400?text=Error+Loading+Image';
-                }}
-              />
-              
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg">{item.name}</h3>
-                <p className="text-gray-600">Size: {item.selectedSize}</p>
-                <p className="text-green-600 font-bold">${item.price}</p>
+            <div key={item.id} className="bg-white p-6 rounded-lg shadow-md">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={getImageUrl(item.image)}
+                    alt={item.name}
+                    className="w-20 h-20 object-cover rounded-md"
+                  />
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
+                    <p className="text-gray-500">Talla: {item.selectedSize}</p>
+                    <p className="text-gray-500">${Number(item.price).toFixed(2)}</p>
+                  </div>
+                </div>
                 
-                <div className="flex items-center gap-4 mt-2">
-                  <select
-                    value={item.quantity}
-                    onChange={(e) => updateQuantity(item.id, item.selectedSize, Number(e.target.value))}
-                    className="border rounded-md px-2 py-1"
-                  >
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <option key={num} value={num}>
-                        {num}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center border rounded-md">
+                    <button
+                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                      className="px-3 py-1 text-gray-600 hover:text-gray-800"
+                    >
+                      -
+                    </button>
+                    <span className="px-3 py-1 text-gray-800">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      className="px-3 py-1 text-gray-600 hover:text-gray-800"
+                    >
+                      +
+                    </button>
+                  </div>
                   
                   <button
-                    onClick={() => removeItem(item.id, item.selectedSize)}
+                    onClick={() => removeItem(item.id)}
                     className="text-red-500 hover:text-red-700"
                   >
                     <Trash2 className="h-5 w-5" />
@@ -96,7 +100,7 @@ export default function Cart() {
           <div className="space-y-2 mb-4">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span>${total.toFixed(2)}</span>
+              <span>${Number(total).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Envío</span>
@@ -107,7 +111,7 @@ export default function Cart() {
           <div className="border-t pt-4">
             <div className="flex justify-between font-semibold text-lg">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>${Number(total).toFixed(2)}</span>
             </div>
           </div>
           

@@ -10,17 +10,23 @@ interface Category {
   descripción: string;
 }
 
+interface SizeStock {
+  [key: number]: number;
+}
+
 export default function AdminProducts() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [uploadType, setUploadType] = useState<'file' | 'url'>('file');
+  const [sizeStocks, setSizeStocks] = useState<SizeStock>({
+    36: 0, 37: 0, 38: 0, 39: 0, 40: 0, 41: 0, 42: 0, 43: 0, 44: 0
+  });
   const [formData, setFormData] = useState({
     nombre: '',
     descripción: '',
     precio: '',
-    stock: '',
     category_id: '',
     imagen: '',
     imagenFile: null as File | null,
@@ -57,6 +63,19 @@ export default function AdminProducts() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSizeStockChange = (size: number, value: string) => {
+    // Asegurarse de que el valor sea un número no negativo
+    const stockValue = Math.max(0, parseInt(value) || 0);
+    
+    // Actualizar con el nuevo valor numérico
+    setSizeStocks(prev => {
+      const newStocks = { ...prev };
+      newStocks[size] = stockValue;
+      console.log(`Actualizado stock para talla ${size}: ${stockValue}`);
+      return newStocks;
+    });
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
     
@@ -91,14 +110,21 @@ export default function AdminProducts() {
       form.append('nombre', formData.nombre);
       form.append('descripción', formData.descripción);
       form.append('precio', formData.precio);
-      form.append('stock', formData.stock);
       form.append('category_id', formData.category_id);
+      
+      // Convertir el stock por talla a un JSON string para enviarlo
+      const stockJSON = JSON.stringify(sizeStocks);
+      console.log('Stock a enviar (objeto):', sizeStocks);
+      console.log('Stock a enviar (JSON string):', stockJSON);
+      form.append('stock', stockJSON);
 
       if (uploadType === 'file' && formData.imagenFile) {
         form.append('imagen', formData.imagenFile);
       } else if (uploadType === 'url' && formData.imagen) {
         form.append('imagen', formData.imagen);
       }
+
+      console.log('Enviando formulario al servidor...');
 
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
@@ -118,10 +144,13 @@ export default function AdminProducts() {
         nombre: '',
         descripción: '',
         precio: '',
-        stock: '',
         category_id: '',
         imagen: '',
         imagenFile: null,
+      });
+      // Reiniciar el stock por talla
+      setSizeStocks({
+        36: 0, 37: 0, 38: 0, 39: 0, 40: 0, 41: 0, 42: 0, 43: 0, 44: 0
       });
     } catch (error: any) {
       console.error('Error al crear producto:', error);
@@ -195,18 +224,23 @@ export default function AdminProducts() {
             </div>
 
             <div>
-              <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
-                Stock
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Stock por Talla
               </label>
-              <input
-                id="stock"
-                name="stock"
-                type="number"
-                required
-                value={formData.stock}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-              />
+              <div className="grid grid-cols-3 gap-3">
+                {Object.keys(sizeStocks).map(size => (
+                  <div key={size} className="flex items-center space-x-2">
+                    <label className="w-8 text-sm text-gray-600">{size}:</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={sizeStocks[parseInt(size)]}
+                      onChange={(e) => handleSizeStockChange(parseInt(size), e.target.value)}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div>

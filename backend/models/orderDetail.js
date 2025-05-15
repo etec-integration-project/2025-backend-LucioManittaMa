@@ -25,6 +25,11 @@ const OrderDetail = sequelize.define('OrderDetail', {
     precio: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false
+    },
+    talla: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        comment: 'Talla del producto seleccionada'
     }
 }, {
     tableName: 'order_details',

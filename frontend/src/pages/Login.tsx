@@ -30,13 +30,23 @@ export default function Login() {
       toast.success('Inicio de sesión exitoso');
       console.log('Preparando navegación...');
       
-      // Aumentamos el delay y verificamos el estado antes de navegar
+      // Verificar si hay una ruta guardada a la que redirigir después del login
       setTimeout(() => {
         const token = localStorage.getItem('token');
         console.log('Token antes de navegar:', !!token);
+        
         if (token) {
-          console.log('Navegando a home...');
-          navigate('/', { replace: true });
+          // Comprobar si hay una ruta guardada para redirigir
+          const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+          
+          if (redirectPath) {
+            console.log(`Redirigiendo a ruta anterior: ${redirectPath}`);
+            sessionStorage.removeItem('redirectAfterLogin'); // Limpiar el almacenamiento
+            navigate(redirectPath, { replace: true });
+          } else {
+            console.log('Navegando a home...');
+            navigate('/', { replace: true });
+          }
         } else {
           console.error('No se encontró token después del login');
           toast.error('Error en la autenticación');

@@ -1,8 +1,8 @@
-import { Product } from './product.js';
+import { Product, createProduct, updateStockBySize, checkStockAvailability } from './product.js';
 import { CartItem } from './cartItem.js';
 import { Category } from './category.js';
 import { Order } from './order.js';
-import { OrderDetail } from './orderDetail.js';
+import { OrderDetail, createOrderDetail } from './orderDetail.js';
 import { Review } from './review.js';
 import { ShoppingCart } from './shoppingCart.js';
 import { User } from './users.js';
@@ -65,7 +65,7 @@ CartItem.belongsTo(ShoppingCart, {
     foreignKey: 'cart_id' 
 });
 
-/* Asociación entre User y ShoppingCart */
+/* Asociación entre User and ShoppingCart */
 
 /**
  * @description Un usuario (User) tiene un carrito de compras (ShoppingCart).
@@ -81,7 +81,7 @@ ShoppingCart.belongsTo(User, {
     foreignKey: 'user_id' 
 });
 
-/* Asociación entre CartItem y Product */
+/* Asociación entre CartItem and Product */
 
 /**
  * @description Un item de carrito (CartItem) pertenece a un producto (Product).
@@ -98,7 +98,7 @@ Product.hasMany(CartItem, {
     foreignKey: 'product_id' 
 });
 
-/* Asociación entre Review y User */
+/* Asociación entre Review and User */
 
 /**
  * @description Un usuario (User) puede tener múltiples reseñas (Review).
@@ -116,7 +116,7 @@ Review.belongsTo(User, {
     as: 'user'
 });
 
-/* Asociación entre Review y Product */
+/* Asociación entre Review and Product */
 
 /**
  * @description Un producto (Product) puede tener múltiples reseñas (Review).
@@ -146,5 +146,7 @@ export {
     OrderDetail,
     Review,
     ShoppingCart,
-    User
+    User,
+    updateStockBySize,
+    checkStockAvailability
 };
