@@ -1,4 +1,4 @@
-import { Order, OrderDetail, Product } from '../models/index.js';
+import { Order, OrderDetail, Product, updateStockBySize } from '../models/index.js';
 
 /**
  * @desc Crea un nuevo pedido
@@ -16,22 +16,45 @@ export const createOrder = async (req, res) => {
             return res.status(401).json({ message: 'Usuario no autenticado' });
         }
 
-        // Calcular el total basado en los detalles de la orden
-        const orderItems = await Promise.all(items.map(async (item) => {
-            const product = await Product.findByPk(item.product_id);
+        // Verificar stock antes de procesar la orden
+        for (const item of items) {
+            const { product_id, cantidad, talla } = item;
+            const product = await Product.findByPk(product_id);
+            
             if (!product) {
-                throw new Error(`Producto con ID ${item.product_id} no encontrado`);
+                return res.status(404).json({ 
+                    message: `Producto con ID ${product_id} no encontrado`
+                });
             }
 
-            const itemTotal = product.precio * item.cantidad;
+            // Verificar si hay suficiente stock para la talla seleccionada
+            if (typeof product.stock === 'object') {
+                if (!product.stock[talla] || product.stock[talla] < cantidad) {
+                    return res.status(400).json({
+                        message: `No hay suficiente stock para el producto ${product.nombre} en talla ${talla}`
+                    });
+                }
+            } else {
+                return res.status(400).json({
+                    message: `El formato de stock para el producto ${product.nombre} no es válido`
+                });
+            }
+        }
+
+        // Calcular el total basado en los detalles de la orden
+        const orderItems = await Promise.all(items.map(async (item) => {
+            const { product_id, cantidad, talla } = item;
+            const product = await Product.findByPk(product_id);
+            const itemTotal = product.precio * cantidad;
             total += itemTotal;
 
-            // Retornar el objeto de OrderDetail con el precio de producto asignado
+            // Retornar el objeto de OrderDetail
             return {
                 order_id: null, // Este será actualizado una vez que la orden sea creada
-                product_id: item.product_id,
-                cantidad: item.cantidad,
-                precio: product.precio  // Aseguramos que precio tenga un valor válido
+                product_id,
+                cantidad,
+                precio: product.precio,
+                talla
             };
         }));
 
@@ -45,59 +68,97 @@ export const createOrder = async (req, res) => {
 
         // Asignar el `order_id` a cada detalle y crear los registros en OrderDetail
         await Promise.all(orderItems.map(async (item) => {
-            item.order_id = order.order_id; // Ahora se asigna el ID de la orden correctamente
+            item.order_id = order.order_id;
             await OrderDetail.create(item);
+
+            // Reducir el stock del producto por talla
+            await updateStockBySize(item.product_id, item.talla, -item.cantidad);
         }));
 
         res.status(201).json({ order, items: orderItems });
     } catch (error) {
+        console.error('Error al crear orden:', error);
         res.status(500).json({ message: error.message });
     }
 };
 
 /**
- * @desc Obtiene todos los pedidos de un usuario
+ * @desc Obtiene todas las órdenes
  * @route GET /api/orders
- * @access Private
+ * @access Private/Admin
  */
-export const getOrders = async (req, res) => {
+export const getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.findAll({
-            where: { user_id: req.user.userId },
-            include: {
-                model: OrderDetail,
-                as: 'items',
-                include: {
-                    model: Product,
-                    as: 'product',
-                },
-            },
-        });
-        res.json(orders);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-/**
- * @desc Actualiza el estado de un pedido
- * @route PUT /api/orders/:id
- * @access Admin
- */
-export const updateOrderStatus = async (req, res) => {
-    const { estado } = req.body;
-
-    try {
-        const order = await Order.findByPk(req.params.id);
-        if (!order) {
-            return res.status(404).json({ message: 'Pedido no encontrado' });
+        if (req.user.rol !== 'admin') {
+            return res.status(403).json({ message: 'No autorizado' });
         }
 
-        order.estado = estado;
-        await order.save();
+        const orders = await Order.findAll({
+            include: [
+                {
+                    association: 'items',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ],
+            order: [['fecha', 'DESC']]
+        });
 
-        res.json(order);
+        res.status(200).json(orders);
     } catch (error) {
+        console.error('Error al obtener órdenes:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * @desc Obtiene las órdenes del usuario autenticado
+ * @route GET /api/orders/me
+ * @access Private
+ */
+export const getUserOrders = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const orders = await Order.findAll({
+            where: { user_id: userId },
+            include: [
+                {
+                    association: 'items',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ],
+            order: [['fecha', 'DESC']]
+        });
+
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('Error al obtener órdenes del usuario:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * @desc Actualiza el estado de una orden
+ * @route PATCH /api/orders/:id
+ * @access Private/Admin
+ */
+export const updateOrderStatus = async (req, res) => {
+    try {
+        if (req.user.rol !== 'admin') {
+            return res.status(403).json({ message: 'No autorizado' });
+        }
+
+        const { id } = req.params;
+        const { estado } = req.body;
+
+        const order = await Order.findByPk(id);
+        if (!order) {
+            return res.status(404).json({ message: 'Orden no encontrada' });
+        }
+
+        await order.update({ estado });
+        res.status(200).json({ message: 'Estado de orden actualizado', order });
+    } catch (error) {
+        console.error('Error al actualizar estado de orden:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -122,29 +183,38 @@ export const deleteOrder = async (req, res) => {
 };
 
 /**
- * @desc Obtiene un pedido por ID
+ * @desc Obtiene una orden por su ID
  * @route GET /api/orders/:id
  * @access Private
  */
 export const getOrderById = async (req, res) => {
     try {
-        const order = await Order.findByPk(req.params.id, {
-            include: {
-                model: OrderDetail,
-                as: 'items',
-                include: {
-                    model: Product,
-                    as: 'product',
-                },
-            },
+        const orderId = req.params.id;
+        const userId = req.user.userId;
+        
+        const order = await Order.findByPk(orderId, {
+            include: [
+                {
+                    association: 'items',
+                    include: [{ model: Product, as: 'product' }]
+                }
+            ]
         });
-
+        
         if (!order) {
-            return res.status(404).json({ message: 'Pedido no encontrado' });
+            return res.status(404).json({ message: 'Orden no encontrada' });
         }
-
-        res.json(order);
+        
+        // Verificar si el usuario es admin o el dueño de la orden
+        if (req.user.rol !== 'admin' && order.user_id !== userId) {
+            return res.status(403).json({ 
+                message: 'No tienes permisos para ver esta orden' 
+            });
+        }
+        
+        res.status(200).json(order);
     } catch (error) {
+        console.error('Error al obtener la orden:', error);
         res.status(500).json({ message: error.message });
     }
 };

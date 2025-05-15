@@ -17,9 +17,58 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
+  refreshUserSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Crear un interceptor para añadir el token a todas las peticiones
+const setupAxiosInterceptors = () => {
+  axios.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Interceptor para manejar errores de autenticación (401)
+  axios.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+      
+      // Si recibimos un 401 y no es un intento de refresh, intentamos refrescar el token
+      if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== `${API_URL}/auth/me`) {
+        originalRequest._retry = true;
+        
+        try {
+          // Intentamos refrescar la sesión
+          const token = localStorage.getItem('token');
+          if (token) {
+            const response = await axios.get(`${API_URL}/auth/me`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            if (response.status === 200) {
+              return axios(originalRequest);
+            }
+          }
+          // Si falla, redirigimos al login
+          window.location.href = '/login';
+          return Promise.reject(error);
+        } catch (refreshError) {
+          return Promise.reject(refreshError);
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
@@ -41,58 +90,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Verificar token y actualizar perfil
+  // Configurar interceptores de Axios
+  useEffect(() => {
+    setupAxiosInterceptors();
+  }, []);
+
+  const refreshUserSession = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setUser(null);
+        setIsAuthenticated(false);
+        return;
+      }
+
+      const response = await axios.get(`${API_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 200) {
+        const userData = response.data;
+        setUser(userData);
+        setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(userData));
+      } else {
+        // Si el token ya no es válido, limpiamos el almacenamiento
+        handleLogout();
+      }
+    } catch (error) {
+      console.error('Error al refrescar la sesión:', error);
+      handleLogout();
+    }
+  };
+
+  // Función auxiliar para manejar el logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+
+  // Verificar token y actualizar perfil al cargar la página
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          setUser(null);
-          setIsAuthenticated(false);
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await fetch(`${API_URL}/auth/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-          setIsAuthenticated(true);
-          localStorage.setItem('user', JSON.stringify(userData));
-        } else {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-          setIsAuthenticated(false);
-        }
+        await refreshUserSession();
       } catch (error) {
-        console.error('Error verificando token:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-        setIsAuthenticated(false);
+        handleLogout();
       } finally {
         setIsLoading(false);
       }
     };
 
     verifyToken();
-  }, []);
 
-  useEffect(() => {
-    console.log('Estado actual:', {
-      user,
-      isAuthenticated,
-      isLoading
-    });
-  }, [user, isAuthenticated, isLoading]);
+    // Configurar un intervalo para verificar el token periódicamente (cada 5 minutos)
+    const intervalId = setInterval(() => {
+      refreshUserSession();
+    }, 5 * 60 * 1000);
+
+    // Configurar eventos para detectar cuando el usuario vuelve a la página
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshUserSession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Limpiar al desmontar
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const login = async (email: string, contraseña: string) => {
     try {
@@ -136,14 +211,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
+    handleLogout();
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, isAuthenticated }}>
+    <AuthContext.Provider value={{
+      user,
+      login,
+      logout,
+      isLoading,
+      isAuthenticated,
+      refreshUserSession
+    }}>
       {children}
     </AuthContext.Provider>
   );

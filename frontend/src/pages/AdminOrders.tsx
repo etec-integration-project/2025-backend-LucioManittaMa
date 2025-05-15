@@ -1,41 +1,41 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
-import { API_URL } from '../config/api';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { API_URL } from '../config/api';
 import { Order, OrderDetail } from '../types';
 
-export default function Account() {
+export default function AdminOrders() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [newStatus, setNewStatus] = useState('');
 
   useEffect(() => {
-    if (user) {
-      fetchOrders();
-    }
-  }, [user]);
+    fetchOrders();
+  }, []);
 
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_URL}/orders/me`, {
+      const response = await fetch(`${API_URL}/orders`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-
+      
       if (!response.ok) {
-        throw new Error('Error al cargar los pedidos');
+        throw new Error('No se pudieron cargar las órdenes');
       }
-
+      
       const data = await response.json();
       setOrders(data);
     } catch (error) {
-      console.error('Error al cargar los pedidos:', error);
-      toast.error('No se pudieron cargar tus pedidos');
+      console.error('Error al cargar órdenes:', error);
+      toast.error('Error al cargar las órdenes');
     } finally {
       setIsLoading(false);
     }
@@ -43,12 +43,39 @@ export default function Account() {
 
   const openOrderModal = (order: Order) => {
     setSelectedOrder(order);
+    setNewStatus(order.estado);
     setShowOrderModal(true);
   };
 
   const closeOrderModal = () => {
     setShowOrderModal(false);
     setSelectedOrder(null);
+  };
+
+  const updateOrderStatus = async () => {
+    if (!selectedOrder) return;
+
+    try {
+      const response = await fetch(`${API_URL}/orders/${selectedOrder.order_id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ estado: newStatus })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el estado de la orden');
+      }
+
+      toast.success('Estado de orden actualizado correctamente');
+      closeOrderModal();
+      fetchOrders(); // Recargar órdenes
+    } catch (error) {
+      console.error('Error al actualizar estado:', error);
+      toast.error('Error al actualizar el estado de la orden');
+    }
   };
 
   const getOrderStatusClass = (status: string) => {
@@ -93,101 +120,88 @@ export default function Account() {
     return 'https://via.placeholder.com/50?text=Error';
   };
 
-  if (!user) {
-    return <Navigate to="/login" />;
+  if (!user || user.rol !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500" />
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-        <h2 className="text-2xl font-bold mb-6">Mi Cuenta</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Información del Perfil</h3>
-            <p className="text-gray-600">Nombre: {user.nombre}</p>
-            <p className="text-gray-600">Email: {user.email}</p>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Configuración de la Cuenta</h3>
-            <button className="text-green-600 hover:text-green-700">
-              Cambiar Contraseña
-            </button>
-          </div>
+    <div className="py-8 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Administrar Órdenes</h1>
+
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ID Orden
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cliente
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {orders.map(order => (
+                <tr key={order.order_id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">#{order.order_id}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{formatDate(order.fecha)}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">ID: {order.user_id}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">${Number(order.total).toFixed(2)}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${getOrderStatusClass(order.estado)}`}>
+                      {order.estado}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => openOrderModal(order)}
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      Ver Detalles
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-6">Mis Pedidos</h2>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500" />
-          </div>
-        ) : orders.length === 0 ? (
-          <p className="text-gray-600">Aún no has realizado ningún pedido.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pedido #
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {orders.map(order => (
-                  <tr key={order.order_id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">#{order.order_id}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatDate(order.fecha)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">${Number(order.total).toFixed(2)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${getOrderStatusClass(order.estado)}`}>
-                        {order.estado}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => openOrderModal(order)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        Ver Detalles
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Modal para ver detalles de la orden */}
+      {/* Modal para detalles de orden y cambio de estado */}
       {showOrderModal && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold">Pedido #{selectedOrder.order_id}</h3>
+              <h3 className="text-lg font-bold">Orden #{selectedOrder.order_id}</h3>
               <button
                 onClick={closeOrderModal}
                 className="text-gray-500 hover:text-gray-700"
@@ -196,9 +210,9 @@ export default function Account() {
               </button>
             </div>
 
-            <div className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Información del Pedido</h4>
+                <h4 className="font-medium text-gray-900 mb-2">Información de la Orden</h4>
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Fecha:</span> {formatDate(selectedOrder.fecha)}
                 </p>
@@ -210,6 +224,16 @@ export default function Account() {
                 </p>
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Total:</span> ${Number(selectedOrder.total).toFixed(2)}
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Información de Envío</h4>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Dirección:</span> {selectedOrder.direccionEnvio}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Método de Pago:</span> {selectedOrder.metodoPago}
                 </p>
               </div>
             </div>
@@ -274,9 +298,32 @@ export default function Account() {
                 </tbody>
               </table>
             </div>
+
+            <div className="border-t pt-4">
+              <h4 className="font-medium text-gray-900 mb-3">Cambiar Estado</h4>
+              <div className="flex items-center space-x-4">
+                <select
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  className="block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="procesando">Procesando</option>
+                  <option value="enviado">Enviado</option>
+                  <option value="entregado">Entregado</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+                <button
+                  onClick={updateOrderStatus}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  Actualizar Estado
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
-}
+} 

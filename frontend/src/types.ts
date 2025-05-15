@@ -1,12 +1,11 @@
 export interface Product {
   product_id: number;
-  name: string;
-  price: number;
-  image: string;
-  brand: string;
-  sizes: number[];
-  color: string;
-  description: string;
+  nombre: string;
+  precio: number;
+  imagen: string;
+  descripción: string;
+  stock: number | Record<number, number>;
+  category_id: number;
 }
 
 export interface CartItem extends Product {
