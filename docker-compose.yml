@@ -34,6 +34,11 @@ services:
       DB_NAME: urban
       JWT_SECRET: Canob19742013
       JWT_EXPIRES_IN: 24h
+      # Email configuration
+      EMAIL_USER: urbansneakershelp@gmail.com
+      EMAIL_PASSWORD: UrbanPass123
+      # Frontend URL
+      FRONTEND_URL: http://localhost:81
     volumes:
       - ./backend:/app
       - /app/node_modules

@@ -10,6 +10,8 @@ import Cart from '../pages/Cart';
 import Favorites from '../pages/Favorites';
 import Account from '../pages/Account';
 import Checkout from '../pages/Checkout';
+import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 import ProtectedRoute from './ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
 
@@ -25,6 +27,8 @@ export default function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/products" element={<Products />} />
       <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
       <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
