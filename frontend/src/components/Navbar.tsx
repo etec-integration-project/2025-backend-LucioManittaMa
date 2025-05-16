@@ -1,4 +1,4 @@
-import { ShoppingBag, Menu, Search, Heart, LogIn, UserCircle, LogOut, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Menu, Search, Heart, LogIn, UserCircle, LogOut, ChevronDown, Shield, Settings, Package, ShoppingCart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useCart } from '../store/useCart';
@@ -82,26 +82,30 @@ export default function Navbar() {
                     {user.rol === 'admin' && (
                       <div className="group relative">
                         <button className="flex items-center space-x-2 text-gray-700 hover:text-green-800">
+                          <Shield className="h-6 w-6" />
                           <span className="hidden md:inline">Admin</span>
                           <ChevronDown className="h-4 w-4" />
                         </button>
-                        <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md py-1 z-10 hidden group-hover:block">
+                        <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md py-1 z-50 hidden group-hover:block">
                           <Link
                             to="/admin/productos"
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
+                            <Package className="h-4 w-4 mr-2" />
                             Agregar Producto
                           </Link>
                           <Link
                             to="/admin/productos/lista"
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
+                            <Settings className="h-4 w-4 mr-2" />
                             Gestionar Productos
                           </Link>
                           <Link
                             to="/admin/ordenes"
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
+                            <ShoppingCart className="h-4 w-4 mr-2" />
                             Gestionar Órdenes
                           </Link>
                         </div>

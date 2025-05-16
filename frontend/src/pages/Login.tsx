@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 import { toast } from 'react-hot-toast';
-import { Mail, Lock } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    contraseña: ''
+    password: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -25,104 +25,150 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      console.log('Iniciando proceso de login...');
-      await login(formData.email, formData.contraseña);
-      toast.success('Inicio de sesión exitoso');
-      console.log('Preparando navegación...');
-      
-      // Verificar si hay una ruta guardada a la que redirigir después del login
-      setTimeout(() => {
-        const token = localStorage.getItem('token');
-        console.log('Token antes de navegar:', !!token);
-        
-        if (token) {
-          // Comprobar si hay una ruta guardada para redirigir
-          const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-          
-          if (redirectPath) {
-            console.log(`Redirigiendo a ruta anterior: ${redirectPath}`);
-            sessionStorage.removeItem('redirectAfterLogin'); // Limpiar el almacenamiento
-            navigate(redirectPath, { replace: true });
-          } else {
-            console.log('Navegando a home...');
-            navigate('/', { replace: true });
-          }
-        } else {
-          console.error('No se encontró token después del login');
-          toast.error('Error en la autenticación');
-        }
-      }, 500);
-    } catch (error) {
-      console.error('Error detallado en login:', error);
-      toast.error(error instanceof Error ? error.message : 'Error en el inicio de sesión');
+      await login(formData.email, formData.password);
+      navigate('/');
+    } catch (error: any) {
+      toast.error(error.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Iniciar Sesión
-        </h2>
-      </div>
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token: credentialResponse.credential })
+      });
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        navigate('/');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Error en la autenticación con Google');
+    }
+  };
+
+  
+
+  const handleGithubLogin = () => {
+    const clientId = "Ov23lifEAJCr9kGFhwP4";
+    const redirectUri = "http://localhost:81/login";
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Iniciar Sesión
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="sr-only">
                 Email
               </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+              />
             </div>
-
             <div>
-              <label htmlFor="contraseña" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="sr-only">
                 Contraseña
               </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="contraseña"
-                  name="contraseña"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={formData.contraseña}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                placeholder="Contraseña"
+                value={formData.password}
+                onChange={handleChange}
+              />
             </div>
+          </div>
 
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Link
+                to="/forgot-password"
+                className="font-medium text-green-600 hover:text-green-500"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              {isLoading ? 'Cargando...' : 'Iniciar Sesión'}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-50 text-gray-500">
+                O continúa con
+              </span>
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <div>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  toast.error('Error en la autenticación con Google');
+                }}
+              />
+            </div>
             <div>
               <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                onClick={handleGithubLogin}
+                className="w-full flex items-center justify-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900"
               >
-                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                Iniciar sesión con GitHub
               </button>
             </div>
-          </form>
+          </div>
+        </div>
+
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-600">
+            ¿No tienes una cuenta?{' '}
+            <Link
+              to="/register"
+              className="font-medium text-green-600 hover:text-green-500"
+            >
+              Regístrate
+            </Link>
+          </p>
         </div>
       </div>
     </div>
