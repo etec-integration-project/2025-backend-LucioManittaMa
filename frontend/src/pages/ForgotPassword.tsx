@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import axios from 'axios';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -11,24 +12,14 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email })
-      });
-
-      const data = await response.json();
+      const response = await axios.post('/api/auth/forgot-password', { email });
       
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success('Se ha enviado un email con las instrucciones para restablecer tu contraseña');
         setEmail('');
-      } else {
-        throw new Error(data.error);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Error al procesar la solicitud');
+      toast.error(error.response?.data?.message || 'Error al procesar la solicitud');
     } finally {
       setIsLoading(false);
     }

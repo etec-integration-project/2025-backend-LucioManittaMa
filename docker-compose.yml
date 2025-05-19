@@ -35,6 +35,7 @@ services:
       JWT_SECRET: Canob19742013
       JWT_EXPIRES_IN: 24h
       # Email configuration
+
       EMAIL_USER: urbansneakershelp@gmail.com
       EMAIL_PASSWORD: UrbanPass123
       # Frontend URL
@@ -57,6 +58,8 @@ services:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
+    environment:
+      - VITE_GITHUB_CLIENT_ID=Ov23lifEAJCr9kGFhwP4
 
 volumes:
   mysql_data:

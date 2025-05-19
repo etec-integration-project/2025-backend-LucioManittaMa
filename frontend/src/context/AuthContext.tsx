@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { API_URL } from '../config/api';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -18,6 +19,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   refreshUserSession: () => Promise<void>;
+  setUser: (user: User | null) => void;
+  setIsAuthenticated: (isAuthenticated: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  const navigate = useNavigate();
+
   // Configurar interceptores de Axios
   useEffect(() => {
     setupAxiosInterceptors();
@@ -102,27 +107,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!token) {
         setUser(null);
         setIsAuthenticated(false);
+        setIsLoading(false);
         return;
       }
 
+      console.log('Refrescando sesión...');
       const response = await axios.get(`${API_URL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Respuesta del servidor:', response.data);
+
       if (response.status === 200) {
-        const userData = response.data;
+        const { user: userData, token: newToken } = response.data;
+        
+        // Actualizar el token si se recibió uno nuevo
+        if (newToken) {
+          localStorage.setItem('token', newToken);
+        }
+        
+        // Actualizar el estado y el almacenamiento local
         setUser(userData);
         setIsAuthenticated(true);
         localStorage.setItem('user', JSON.stringify(userData));
+        
+        console.log('Sesión actualizada:', userData);
       } else {
-        // Si el token ya no es válido, limpiamos el almacenamiento
+        console.log('Token inválido, cerrando sesión');
         handleLogout();
       }
     } catch (error) {
       console.error('Error al refrescar la sesión:', error);
       handleLogout();
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -138,35 +158,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        await refreshUserSession();
+        const token = localStorage.getItem('token');
+        
+        if (token) {
+          // Intentar refrescar la sesión inmediatamente
+          await refreshUserSession();
+        } else {
+          handleLogout();
+          setIsLoading(false);
+        }
       } catch (error) {
+        console.error('Error al verificar token:', error);
         handleLogout();
-      } finally {
         setIsLoading(false);
       }
     };
 
     verifyToken();
-
-    // Configurar un intervalo para verificar el token periódicamente (cada 5 minutos)
-    const intervalId = setInterval(() => {
-      refreshUserSession();
-    }, 5 * 60 * 1000);
-
-    // Configurar eventos para detectar cuando el usuario vuelve a la página
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        refreshUserSession();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Limpiar al desmontar
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
   }, []);
 
   const login = async (email: string, contraseña: string) => {
@@ -202,16 +210,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user);
       setIsAuthenticated(true);
       
-      console.log('Login completado exitosamente');
-      return { token: data.token, user: data.user };
+      return data;
     } catch (error) {
-      console.error('Error en proceso de login:', error);
+      console.error('Error en login:', error);
       throw error;
     }
   };
 
   const logout = () => {
     handleLogout();
+    navigate('/login');
   };
 
   return (
@@ -221,7 +229,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       isLoading,
       isAuthenticated,
-      refreshUserSession
+      refreshUserSession,
+      setUser,
+      setIsAuthenticated
     }}>
       {children}
     </AuthContext.Provider>

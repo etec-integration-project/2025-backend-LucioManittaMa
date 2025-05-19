@@ -20,20 +20,23 @@ const User = sequelize.define('User', {
       isEmail: true
     }
   },
-  password: {
+  contraseña: {
     type: DataTypes.STRING,
-    allowNull: true // Permitimos null para usuarios que se autentican con redes sociales
+    allowNull: true
   },
   rol: {
-    type: DataTypes.ENUM('user', 'admin'),
-    defaultValue: 'user'
+    type: DataTypes.STRING,
+    defaultValue: 'cliente',
+    validate: {
+      isIn: [['cliente', 'admin']]
+    }
   },
   googleId: {
     type: DataTypes.STRING,
     allowNull: true,
     unique: true
   },
-  facebookId: {
+  githubId: {
     type: DataTypes.STRING,
     allowNull: true,
     unique: true
@@ -47,24 +50,27 @@ const User = sequelize.define('User', {
     allowNull: true
   }
 }, {
+  tableName: 'users',
+  timestamps: true,
   hooks: {
     beforeCreate: async (user) => {
-      if (user.password) {
+      if (user.contraseña) {
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        user.contraseña = await bcrypt.hash(user.contraseña, salt);
       }
     },
     beforeUpdate: async (user) => {
-      if (user.changed('password')) {
+      if (user.changed('contraseña') && user.contraseña) {
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        user.contraseña = await bcrypt.hash(user.contraseña, salt);
       }
     }
   }
 });
 
-User.prototype.validatePassword = async function(password) {
-  return await bcrypt.compare(password, this.password);
+User.prototype.validatePassword = async function(contraseña) {
+  if (!this.contraseña) return false;
+  return await bcrypt.compare(contraseña, this.contraseña);
 };
 
-export default User;
+export { User };

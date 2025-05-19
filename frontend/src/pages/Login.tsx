@@ -1,17 +1,50 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { toast } from 'react-hot-toast';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { login, setUser, setIsAuthenticated } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Manejar el callback de GitHub
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+    if (code) {
+      setIsLoading(true);
+      fetch('http://localhost:3000/api/auth/github', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code })
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          if (res.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            setUser(data.user);
+            setIsAuthenticated(true);
+            navigate('/');
+          } else {
+            throw new Error(data.message || 'Error en la autenticación con GitHub');
+          }
+        })
+        .catch((error) => {
+          toast.error(error.message || 'Error en la autenticación con GitHub');
+        })
+        .finally(() => setIsLoading(false));
+    }
+  }, [location, navigate, setUser, setIsAuthenticated]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -36,7 +69,7 @@ export default function Login() {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+      const response = await fetch('http://localhost:3000/api/auth/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -47,6 +80,11 @@ export default function Login() {
       const data = await response.json();
       if (response.ok) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        setUser(data.user);
+        setIsAuthenticated(true);
+        
         navigate('/');
       } else {
         throw new Error(data.error);
@@ -59,9 +97,14 @@ export default function Login() {
   
 
   const handleGithubLogin = () => {
-    const clientId = "Ov23lifEAJCr9kGFhwP4";
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
     const redirectUri = "http://localhost:81/login";
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
+    if (!clientId) {
+      console.error('VITE_GITHUB_CLIENT_ID no está definido.');
+      toast.error('Error de configuración: Client ID de GitHub no encontrado.');
+      return;
+    }
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email`;
   };
 
   return (

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import axios from 'axios';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -29,27 +30,17 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          token,
-          password: formData.password
-        })
+      const response = await axios.post('/api/auth/reset-password', {
+        token,
+        password: formData.password
       });
-
-      const data = await response.json();
       
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success('Contraseña actualizada correctamente');
         navigate('/login');
-      } else {
-        throw new Error(data.error);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Error al restablecer la contraseña');
+      toast.error(error.response?.data?.message || 'Error al restablecer la contraseña');
     } finally {
       setIsLoading(false);
     }

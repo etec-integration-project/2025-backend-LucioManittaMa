@@ -11,12 +11,14 @@ export function corsMiddleware(req, res, next) {
 
     if (allowedOrigins.includes(origin)) {
         res.header('Access-Control-Allow-Origin', origin); // Permitir el origen específico
+        res.header('Access-Control-Allow-Credentials', 'true');
     } else {
         res.header('Access-Control-Allow-Origin', '*'); // Permitir todos los orígenes temporalmente
     }
 
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.header('Access-Control-Expose-Headers', 'Content-Length, Content-Range');
 
     // Manejar solicitudes preflight (OPTIONS)
     if (req.method === 'OPTIONS') {

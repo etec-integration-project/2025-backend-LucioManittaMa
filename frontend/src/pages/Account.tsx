@@ -6,21 +6,22 @@ import { toast } from 'react-hot-toast';
 import { Order, OrderDetail } from '../types';
 
 export default function Account() {
-  const { user } = useAuth();
+  const { user, refreshUserSession, isLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchOrders();
+    } else {
+      refreshUserSession();
     }
+    // eslint-disable-next-line
   }, [user]);
 
   const fetchOrders = async () => {
     try {
-      setIsLoading(true);
       const response = await fetch(`${API_URL}/orders/me`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -36,8 +37,6 @@ export default function Account() {
     } catch (error) {
       console.error('Error al cargar los pedidos:', error);
       toast.error('No se pudieron cargar tus pedidos');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -93,6 +92,14 @@ export default function Account() {
     return 'https://via.placeholder.com/50?text=Error';
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500" />
+      </div>
+    );
+  }
+
   if (!user) {
     return <Navigate to="/login" />;
   }
@@ -105,8 +112,17 @@ export default function Account() {
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold mb-2">Información del Perfil</h3>
-            <p className="text-gray-600">Nombre: {user.nombre}</p>
-            <p className="text-gray-600">Email: {user.email}</p>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-gray-600 mb-2">
+                <span className="font-medium">Nombre:</span> {user.nombre}
+              </p>
+              <p className="text-gray-600 mb-2">
+                <span className="font-medium">Email:</span> {user.email}
+              </p>
+              <p className="text-gray-600">
+                <span className="font-medium">Rol:</span> {user.rol}
+              </p>
+            </div>
           </div>
           
           <div>
@@ -121,11 +137,7 @@ export default function Account() {
       <div className="bg-white shadow-md rounded-lg p-6">
         <h2 className="text-2xl font-bold mb-6">Mis Pedidos</h2>
         
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500" />
-          </div>
-        ) : orders.length === 0 ? (
+        {orders.length === 0 ? (
           <p className="text-gray-600">Aún no has realizado ningún pedido.</p>
         ) : (
           <div className="overflow-x-auto">
