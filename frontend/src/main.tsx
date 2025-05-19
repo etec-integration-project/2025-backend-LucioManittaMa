@@ -9,7 +9,7 @@ if (!rootElement) throw new Error('Failed to find the root element');
 
 createRoot(rootElement).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId="AQUI_TU_CLIENT_ID_DE_GOOGLE">
+    <GoogleOAuthProvider clientId="530806533254-t8d93e0ogi08afrivnlrnk3k48qppuu2.apps.googleusercontent.com">
       <App />
     </GoogleOAuthProvider>
   </StrictMode>

@@ -1,15 +1,35 @@
-import { ShoppingBag, Menu, Search, Heart, LogIn, UserCircle, LogOut, ChevronDown, Shield, Settings, Package, ShoppingCart } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { ShoppingBag, Menu, Search, Heart, LogIn, UserCircle, LogOut, ChevronDown, Shield, Settings, Package, ShoppingCart, Tag } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../store/useCart';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const cartItems = useCart((state) => state.items);
   const { user, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -24,6 +44,10 @@ export default function Navbar() {
     if (searchTerm.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
     }
+  };
+
+  const handleAdminButtonClick = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   return (
@@ -71,44 +95,52 @@ export default function Navbar() {
               )}
             </Link>
 
-            <div className="relative group">
+            <div className="relative" ref={menuRef}>
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 relative">
                     <Link to="/account" className="flex items-center space-x-2 text-gray-700 hover:text-green-800">
                       <UserCircle className="h-6 w-6" />
                       <span className="hidden md:inline">{user.nombre}</span>
                     </Link>
                     {user.rol === 'admin' && (
-                      <div className="group relative">
-                        <button className="flex items-center space-x-2 text-gray-700 hover:text-green-800">
+                      <div className="relative">
+                        <button
+                          onClick={handleAdminButtonClick}
+                          className="flex items-center space-x-2 text-gray-700 hover:text-green-800 focus:outline-none"
+                        >
                           <Shield className="h-6 w-6" />
                           <span className="hidden md:inline">Admin</span>
                           <ChevronDown className="h-4 w-4" />
                         </button>
-                        <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md py-1 z-50 hidden group-hover:block">
-                          <Link
-                            to="/admin/productos"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <Package className="h-4 w-4 mr-2" />
-                            Agregar Producto
-                          </Link>
-                          <Link
-                            to="/admin/productos/lista"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <Settings className="h-4 w-4 mr-2" />
-                            Gestionar Productos
-                          </Link>
-                          <Link
-                            to="/admin/ordenes"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            Gestionar Órdenes
-                          </Link>
-                        </div>
+                        {isMenuOpen && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md py-1 z-50 block">
+                            <Link
+                              to="/admin/productos/lista"
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <Package className="h-4 w-4 mr-2" />
+                              Gestionar Productos
+                            </Link>
+                            <Link
+                              to="/admin/ordenes"
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <ShoppingCart className="h-4 w-4 mr-2" />
+                              Gestionar Órdenes
+                            </Link>
+                            <Link
+                              to="/admin/categorias"
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <Tag className="h-4 w-4 mr-2" />
+                              Gestionar Categorías
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

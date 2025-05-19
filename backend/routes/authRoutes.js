@@ -1,14 +1,17 @@
-const express = require('express');
+import express from 'express';
+import { register, login, getUserProfile, googleAuth, forgotPassword, resetPassword, githubAuth, verifyToken } from '../controllers/authController.js';
+import { authMiddleware as auth } from '../controllers/authMiddleware.js';
+
 const router = express.Router();
-const { register, login, getProfile, googleAuth, forgotPassword, resetPassword, githubAuth } = require('../controllers/authController');
-const auth = require('../middleware/auth');
 
 router.post('/register', register);
 router.post('/login', login);
-router.get('/profile', auth, getProfile);
+router.get('/profile', auth, getUserProfile);
 router.post('/google', googleAuth);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/github', githubAuth);
+router.get('/verify-token', auth, verifyToken);
+router.get('/me', auth, verifyToken);
 
-module.exports = router; 
+export default router; 
