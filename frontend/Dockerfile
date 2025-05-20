@@ -14,6 +14,8 @@ RUN npm install --no-audit --no-fund
 COPY . .
 
 # Construir la aplicación para producción
+ARG VITE_GITHUB_CLIENT_ID
+ENV VITE_GITHUB_CLIENT_ID=$VITE_GITHUB_CLIENT_ID
 RUN npm run build
 
 # Etapa 2: Servir con Nginx

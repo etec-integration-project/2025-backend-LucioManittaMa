@@ -62,3 +62,35 @@ export const authMiddleware = (req, res, next) => {
         });
     }
 };
+
+export const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: 'No se proporcionó token de autenticación' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'Formato de token inválido' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.userId || !decoded.rol) {
+      return res.status(401).json({ message: 'Token inválido' });
+    }
+
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error('Error de autenticación:', error);
+    res.status(401).json({ message: 'Token inválido o expirado' });
+  }
+};
+
+export const isAdmin = (req, res, next) => {
+  if (req.user.rol !== 'admin') {
+    return res.status(403).json({ message: 'Acceso denegado' });
+  }
+  next();
+};

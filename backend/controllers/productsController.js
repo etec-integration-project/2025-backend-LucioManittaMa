@@ -32,101 +32,38 @@ export const getAllProducts = async (req, res) => {
  */
 export const createProduct = async (req, res) => {
     try {
-        console.log('=== Debug Crear Producto ===');
-        console.log('Usuario:', req.user);
-        console.log('Body completo:', req.body);
-        console.log('Stock (raw):', req.body.stock);
-        console.log('Tipo de stock:', typeof req.body.stock);
-        console.log('Archivo:', req.file);
-
         const { nombre, descripción, precio, stock, category_id } = req.body;
+        const imagen = req.file ? `/uploads/${req.file.filename}` : null;
 
-        // Validar campos requeridos
-        if (!nombre || !precio || !stock || !category_id) {
-            return res.status(400).json({
-                message: 'Faltan campos requeridos',
-                required: ['nombre', 'precio', 'stock', 'category_id'],
-                received: req.body
-            });
-        }
-
-        // Manejar la imagen
-        let imagenPath = null;
-        
-        if (req.file) {
-            imagenPath = `/uploads/${req.file.filename}`;
-        } else if (req.body.imagen && req.body.imagen.startsWith('data:image')) {
-            const base64Data = req.body.imagen.replace(/^data:image\/\w+;base64,/, '');
-            const buffer = Buffer.from(base64Data, 'base64');
-            const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
-            const filePath = path.join(__dirname, '../uploads', fileName);
-            
-            fs.writeFileSync(filePath, buffer);
-            imagenPath = `/uploads/${fileName}`;
-        } else if (req.body.imagen) {
-            imagenPath = req.body.imagen;
-        }
-
-        // Procesar el stock por talla
-        let stockBySize = {};
-        console.log('Procesando stock:', stock);
-        
+        // Parsear el stock si viene como string JSON
+        let stockData = stock;
         if (typeof stock === 'string') {
-            console.log('Stock es string, intentando parsear...');
             try {
-                const parsedStock = JSON.parse(stock);
-                console.log('Stock parseado correctamente:', parsedStock);
-                
-                // Convertir valores a enteros
-                Object.keys(parsedStock).forEach(size => {
-                    stockBySize[size] = parseInt(parsedStock[size]) || 0;
-                });
-            } catch (error) {
-                console.error('Error al parsear JSON de stock:', error);
-                // Valores por defecto
-                [36, 37, 38, 39, 40, 41, 42, 43, 44].forEach(size => {
-                    stockBySize[size] = 0;
-                });
+                stockData = JSON.parse(stock);
+            } catch (e) {
+                console.error('Error al parsear stock:', e);
+                return res.status(400).json({ message: 'Formato de stock inválido' });
             }
-        } else if (typeof stock === 'object' && stock !== null) {
-            console.log('Stock es objeto, procesando directamente...');
-            // Convertir valores a enteros
-            Object.keys(stock).forEach(size => {
-                stockBySize[size] = parseInt(stock[size]) || 0;
-            });
-        } else {
-            console.log('Stock es otro tipo, distribuyendo equitativamente...');
-            // Si es un número o cualquier otro valor, distribuir el stock equitativamente
-            const totalStock = parseInt(stock) || 0;
-            const sizes = [36, 37, 38, 39, 40, 41, 42, 43, 44];
-            const stockPerSize = Math.floor(totalStock / sizes.length);
-            sizes.forEach(size => {
-                stockBySize[size] = stockPerSize;
-            });
         }
-
-        console.log('Stock final procesado:', stockBySize);
 
         const productData = {
             nombre,
-            descripción: descripción || '',
-            precio: parseFloat(precio),
-            stock: stockBySize,
-            category_id: parseInt(category_id),
-            imagen: imagenPath
+            descripción,
+            precio,
+            stock: stockData,
+            category_id,
+            imagen
         };
 
-        console.log('Datos completos del producto a crear:', productData);
+        console.log('Datos del producto a crear:', productData);
 
         const product = await Product.create(productData);
-        console.log('Producto creado:', product.toJSON());
-
         res.status(201).json(product);
     } catch (error) {
         console.error('Error al crear producto:', error);
-        res.status(500).json({
+        res.status(500).json({ 
             message: 'Error al crear el producto',
-            error: error.message
+            error: error.message 
         });
     }
 };

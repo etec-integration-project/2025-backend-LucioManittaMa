@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import AppRoutes from './routes';
 import Navbar from './components/Navbar';
 import ErrorBoundary from './components/ErrorBoundart';
+import AdminCategories from './pages/AdminCategories';
 
 function App() {
   return (

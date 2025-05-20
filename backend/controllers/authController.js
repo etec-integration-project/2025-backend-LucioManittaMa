@@ -20,134 +20,91 @@ const transporter = nodemailer.createTransport({
 });
 
 export const register = async (req, res) => {
-    const { nombre, email, contraseña, rol = 'cliente', dirección, teléfono } = req.body;
-
-    if (!nombre || !email || !contraseña) {
-        return res.status(400).json({ message: 'Faltan datos obligatorios: nombre, email y contraseña' });
+  try {
+    const { nombre, email, contraseña, rol = 'cliente' } = req.body;
+    
+    // Verificar si el usuario ya existe
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'El usuario ya existe' });
     }
 
-    try {
-        console.log('=== Debug Registro ===');
-        console.log('Datos recibidos:', { nombre, email, rol });
+    // Crear nuevo usuario
+    const user = await User.create({
+      nombre,
+      email,
+      contraseña,
+      rol
+    });
 
-        const existingUser = await User.findOne({ 
-            where: { 
-                [Op.or]: [
-                    { email },
-                    { googleId: { [Op.not]: null } }
-                ]
-            }
-        });
+    // Generar token
+    const token = jwt.sign(
+      { userId: user.user_id, rol: user.rol },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
 
-        if (existingUser) {
-            console.log('❌ Usuario ya existe:', email);
-            return res.status(400).json({ message: 'El usuario ya existe' });
-        }
-
-        const newUser = await User.create({
-            nombre,
-            email,
-            contraseña,
-            rol,
-            dirección,
-            teléfono
-        });
-
-        console.log('✅ Usuario creado:', {
-            id: newUser.user_id,
-            nombre: newUser.nombre,
-            email: newUser.email,
-            rol: newUser.rol
-        });
-
-        const token = jwt.sign(
-            { 
-                userId: newUser.user_id,
-                email: newUser.email,
-                rol: newUser.rol 
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN }
-        );
-
-        res.status(201).json({
-            message: 'Usuario registrado exitosamente',
-            token,
-            user: {
-                id: newUser.user_id,
-                nombre: newUser.nombre,
-                email: newUser.email,
-                rol: newUser.rol
-            }
-        });
-    } catch (error) {
-        console.error('❌ Error en registro:', error);
-        res.status(500).json({ message: 'Error al registrar usuario', error: error.message });
-    }
+    res.status(201).json({
+      message: 'Usuario registrado exitosamente',
+      token,
+      user: {
+        id: user.user_id,
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol
+      }
+    });
+  } catch (error) {
+    console.error('Error en registro:', error);
+    res.status(500).json({ message: 'Error al registrar usuario' });
+  }
 };
 
 export const login = async (req, res) => {
+  try {
     const { email, contraseña } = req.body;
+    console.log('=== Debug Login ===');
+    console.log('Email recibido:', email);
+    console.log('Contraseña recibida:', contraseña ? 'Sí' : 'No');
 
-    try {
-        console.log('Intento de login para:', email);
-        
-        const user = await User.findOne({ 
-            where: { email },
-            attributes: ['user_id', 'nombre', 'email', 'contraseña', 'rol', 'googleId']
-        });
-
-        if (!user) {
-            console.log('❌ Usuario no encontrado:', email);
-            return res.status(401).json({ message: 'Credenciales inválidas' });
-        }
-
-        if (user.googleId && !contraseña) {
-            console.log('❌ Usuario con autenticación de Google:', email);
-            return res.status(401).json({ message: 'Esta cuenta usa autenticación de Google. Por favor, inicia sesión con Google.' });
-        }
-
-        if (!user.contraseña) {
-            console.log('❌ Usuario sin contraseña:', email);
-            return res.status(401).json({ message: 'Esta cuenta no tiene contraseña configurada. Por favor, usa el método de inicio de sesión correspondiente.' });
-        }
-
-        const isPasswordValid = await user.validatePassword(contraseña);
-        if (!isPasswordValid) {
-            console.log('❌ Contraseña incorrecta para:', email);
-            return res.status(401).json({ message: 'Credenciales inválidas' });
-        }
-
-        const token = jwt.sign(
-            { 
-                userId: user.user_id,
-                email: user.email,
-                rol: user.rol 
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN }
-        );
-
-        const userResponse = {
-            id: user.user_id,
-            nombre: user.nombre,
-            email: user.email,
-            rol: user.rol
-        };
-
-        console.log('✅ Login exitoso para:', email, 'Rol:', user.rol);
-        res.status(200).json({
-            token,
-            user: userResponse
-        });
-
-    } catch (error) {
-        console.error('❌ Error en login:', error);
-        res.status(500).json({ 
-            message: 'Error al iniciar sesión', 
-            error: error.message 
-        });
+    // Buscar usuario
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      console.log('❌ Usuario no encontrado');
+      return res.status(401).json({ message: 'Credenciales inválidas' });
     }
+    console.log('✅ Usuario encontrado');
+
+    // Verificar contraseña
+    console.log('Verificando contraseña...');
+    const isValidPassword = await bcrypt.compare(contraseña, user.contraseña);
+    console.log('Resultado de verificación:', isValidPassword ? '✅ Correcta' : '❌ Incorrecta');
+    
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
+
+    // Generar token
+    const token = jwt.sign(
+      { userId: user.user_id, rol: user.rol },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    console.log('✅ Login exitoso');
+    res.json({
+      token,
+      user: {
+        id: user.user_id,
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error en login:', error);
+    res.status(500).json({ message: 'Error al iniciar sesión' });
+  }
 };
 
 export const getUserProfile = async (req, res) => {
@@ -325,6 +282,17 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { token, contraseña } = req.body;
+    console.log('=== Debug Reset Password ===');
+    console.log('Token recibido:', token);
+    console.log('Contraseña recibida:', contraseña ? 'Sí' : 'No');
+    
+    if (!token || !contraseña) {
+      console.log('❌ Datos incompletos');
+      return res.status(400).json({ 
+        error: 'Token y contraseña son requeridos',
+        received: { token: !!token, contraseña: !!contraseña }
+      });
+    }
     
     const user = await User.findOne({
       where: {
@@ -334,18 +302,46 @@ export const resetPassword = async (req, res) => {
     });
 
     if (!user) {
+      console.log('❌ Usuario no encontrado o token expirado');
       return res.status(400).json({ error: 'El token es inválido o ha expirado' });
     }
 
+    console.log('✅ Usuario encontrado, procediendo a actualizar contraseña');
+    
+    // Actualizar usuario - el hook beforeUpdate se encargará de hashear la contraseña
     user.contraseña = contraseña;
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
+    
+    console.log('Guardando cambios...');
     await user.save();
+    console.log('Cambios guardados');
 
+    // Verificar que la contraseña se guardó correctamente
+    const updatedUser = await User.findOne({ where: { user_id: user.user_id } });
+    console.log('Usuario recuperado después de guardar:', updatedUser ? 'Sí' : 'No');
+    
+    if (!updatedUser) {
+      console.log('❌ Error: No se pudo recuperar el usuario después de guardar');
+      return res.status(500).json({ error: 'Error al actualizar la contraseña' });
+    }
+
+    const isPasswordValid = await updatedUser.validatePassword(contraseña);
+    console.log('Verificación post-guardado:', isPasswordValid ? '✅ Correcta' : '❌ Incorrecta');
+
+    if (!isPasswordValid) {
+      console.log('❌ Error: La contraseña no se guardó correctamente');
+      return res.status(500).json({ error: 'Error al actualizar la contraseña' });
+    }
+
+    console.log('✅ Contraseña actualizada correctamente');
     res.json({ message: 'Contraseña actualizada correctamente' });
   } catch (error) {
-    console.error('Error al restablecer contraseña:', error);
-    res.status(500).json({ error: 'Error al restablecer la contraseña' });
+    console.error('❌ Error al restablecer contraseña:', error);
+    res.status(500).json({ 
+      error: 'Error al restablecer la contraseña',
+      details: error.message 
+    });
   }
 };
 
@@ -356,9 +352,6 @@ export const githubAuth = async (req, res) => {
       return res.status(400).json({ message: 'Código no proporcionado' });
     }
 
-    console.log('=== Debug GitHub Auth ===');
-    console.log('Código de GitHub recibido:', code);
-
     // Intercambiar el código por un token de acceso en GitHub
     const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
       client_id: process.env.GITHUB_CLIENT_ID,
@@ -366,18 +359,16 @@ export const githubAuth = async (req, res) => {
       code
     }, {
       headers: {
-        Accept: 'application/json'
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
       }
     });
 
     const { access_token } = tokenResponse.data;
 
     if (!access_token) {
-       console.error('Error al obtener access_token de GitHub:', tokenResponse.data);
-       return res.status(400).json({ message: 'Error al obtener token de acceso de GitHub' });
+      return res.status(400).json({ message: 'Error al obtener token de acceso de GitHub' });
     }
-
-    console.log('Access token de GitHub obtenido:', access_token);
 
     // Usar el access_token para obtener información del usuario
     const githubUserResponse = await axios.get('https://api.github.com/user', {
@@ -387,54 +378,44 @@ export const githubAuth = async (req, res) => {
     });
 
     const { id: githubId, email: publicEmail, name } = githubUserResponse.data;
-    console.log('Datos de usuario de GitHub:', { email: publicEmail, name, githubId });
-
     let userEmail = publicEmail;
 
     // Si el email público no está disponible, intentar obtenerlo de /user/emails
     if (!userEmail) {
-        console.log('Email público no disponible, intentando obtener de /user/emails');
-        try {
-            const emailsResponse = await axios.get('https://api.github.com/user/emails', {
-                headers: {
-                    Authorization: `Bearer ${access_token}`
-                }
-            });
-            // Buscar el email primario y verificado
-            const primaryEmail = emailsResponse.data.find(e => e.primary && e.verified);
-            if (primaryEmail) {
-                userEmail = primaryEmail.email;
-                console.log('Email primario y verificado encontrado:', userEmail);
-            } else {
-                 console.log('No se encontró email primario y verificado en /user/emails.');
-            }
-        } catch (emailsError) {
-            console.error('Error al obtener emails de /user/emails:', emailsError.message);
+      try {
+        const emailsResponse = await axios.get('https://api.github.com/user/emails', {
+          headers: {
+            Authorization: `Bearer ${access_token}`
+          }
+        });
+        const primaryEmail = emailsResponse.data.find(e => e.primary && e.verified);
+        if (primaryEmail) {
+          userEmail = primaryEmail.email;
         }
+      } catch (emailsError) {
+        console.error('Error al obtener emails:', emailsError);
+      }
     }
 
     if (!userEmail) {
-        console.error('No se pudo obtener un email válido de GitHub para el usuario:', name);
-        return res.status(400).json({ message: 'No se pudo obtener un email de tu cuenta de GitHub. Asegúrate de tener un email primario y verificado, y que no esté configurado como privado en exceso.' });
+      return res.status(400).json({ 
+        message: 'No se pudo obtener un email de tu cuenta de GitHub. Asegúrate de tener un email primario y verificado.'
+      });
     }
 
     // Buscar usuario por githubId
-    let user = await User.findOne({ where: { githubId: githubId.toString() } }); // Aseguramos que sea string
-    console.log('Búsqueda por githubId:', user ? 'Encontrado' : 'No encontrado');
+    let user = await User.findOne({ where: { githubId: githubId.toString() } });
 
     if (!user) {
       // Si no existe por githubId, buscar por email
       user = await User.findOne({ where: { email: userEmail } });
-      console.log('Búsqueda por email:', user ? 'Encontrado' : 'No encontrado');
 
       if (user) {
         // Si existe por email, actualizar con githubId
-        console.log('Usuario existente encontrado por email, actualizando con githubId');
         user.githubId = githubId.toString();
         await user.save();
       } else {
         // Si no existe, crear nuevo usuario
-        console.log('Creando nuevo usuario con GitHub');
         user = await User.create({
           nombre: name || userEmail,
           email: userEmail,
@@ -444,26 +425,13 @@ export const githubAuth = async (req, res) => {
         });
       }
     } else {
-        // Si el usuario ya existe por githubId, actualizar datos si es necesario
-        if (user.email !== userEmail || user.nombre !== name) {
-             console.log('Usuario existente encontrado por githubId, actualizando email o nombre');
-             user.email = userEmail;
-             if (name) user.nombre = name;
-             await user.save();
-        }
+      // Si el usuario ya existe por githubId, actualizar datos si es necesario
+      if (user.email !== userEmail || user.nombre !== name) {
+        user.email = userEmail;
+        if (name) user.nombre = name;
+        await user.save();
+      }
     }
-
-    // Verificamos que el usuario existe y tiene un ID válido
-    if (!user || !user.user_id) {
-      console.error('Error: Usuario no válido después de la autenticación de GitHub');
-      return res.status(500).json({ error: 'Error interno en la autenticación' });
-    }
-
-    console.log('Usuario autenticado con GitHub:', {
-      id: user.user_id,
-      email: user.email,
-      rol: user.rol
-    });
 
     const jwtToken = jwt.sign(
       {
@@ -475,19 +443,17 @@ export const githubAuth = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
-    const userResponse = {
-      id: user.user_id,
-      nombre: user.nombre,
-      email: user.email,
-      rol: user.rol
-    };
-
     res.json({
       token: jwtToken,
-      user: userResponse
+      user: {
+        id: user.user_id,
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol
+      }
     });
   } catch (error) {
-    console.error('Error detallado en autenticación con GitHub:', error);
+    console.error('Error en autenticación con GitHub:', error);
     res.status(500).json({
       message: 'Error en la autenticación con GitHub',
       details: error.message
