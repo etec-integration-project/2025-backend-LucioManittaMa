@@ -7,10 +7,27 @@ import { Category } from '../models/index.js';
  */
 export const createCategory = async (req, res) => {
     try {
-        const category = await Category.create(req.body);
-        res.status(201).json(category);
+        const { nombre, descripción } = req.body;
+        
+        if (!nombre) {
+            return res.status(400).json({ error: 'El nombre es requerido' });
+        }
+
+        const category = await Category.create({
+            nombre,
+            descripción
+        });
+
+        res.status(201).json({
+            message: 'Categoría creada exitosamente',
+            category
+        });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Error al crear categoría:', error);
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({ error: 'Ya existe una categoría con ese nombre' });
+        }
+        res.status(500).json({ error: 'Error al crear la categoría' });
     }
 };
 
@@ -19,12 +36,15 @@ export const createCategory = async (req, res) => {
  * @route GET /api/categories
  * @access Public
  */
-export const getAllCategories = async (req, res) => {
+export const getCategories = async (req, res) => {
     try {
-        const categories = await Category.findAll();
-        res.status(200).json(categories);
+        const categories = await Category.findAll({
+            order: [['nombre', 'ASC']]
+        });
+        res.json(categories);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Error al obtener categorías:', error);
+        res.status(500).json({ error: 'Error al obtener las categorías' });
     }
 };
 
@@ -52,18 +72,29 @@ export const getCategoryById = async (req, res) => {
  */
 export const updateCategory = async (req, res) => {
     try {
-        const [updated] = await Category.update(req.body, {
-            where: { category_id: req.params.id }
-        });
+        const { id } = req.params;
+        const { nombre, descripción } = req.body;
 
-        if (!updated) {
-            return res.status(404).json({ error: "Categoría no encontrada" });
+        const category = await Category.findByPk(id);
+        if (!category) {
+            return res.status(404).json({ error: 'Categoría no encontrada' });
         }
 
-        const updatedCategory = await Category.findByPk(req.params.id);
-        res.status(200).json(updatedCategory);
+        await category.update({
+            nombre: nombre || category.nombre,
+            descripción: descripción || category.descripción
+        });
+
+        res.json({
+            message: 'Categoría actualizada exitosamente',
+            category
+        });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Error al actualizar categoría:', error);
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({ error: 'Ya existe una categoría con ese nombre' });
+        }
+        res.status(500).json({ error: 'Error al actualizar la categoría' });
     }
 };
 
@@ -74,14 +105,17 @@ export const updateCategory = async (req, res) => {
  */
 export const deleteCategory = async (req, res) => {
     try {
-        const deleted = await Category.destroy({ where: { category_id: req.params.id } });
-
-        if (!deleted) {
-            return res.status(404).json({ error: "Categoría no encontrada" });
+        const { id } = req.params;
+        const category = await Category.findByPk(id);
+        
+        if (!category) {
+            return res.status(404).json({ error: 'Categoría no encontrada' });
         }
 
-        res.status(200).json({ message: "Categoría eliminada" });
+        await category.destroy();
+        res.json({ message: 'Categoría eliminada exitosamente' });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Error al eliminar categoría:', error);
+        res.status(500).json({ error: 'Error al eliminar la categoría' });
     }
 };

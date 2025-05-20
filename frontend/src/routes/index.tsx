@@ -14,6 +14,7 @@ import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
 import ProtectedRoute from './ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
+import AdminCategories from '../pages/AdminCategories';
 
 export default function AppRoutes() {
   const { isLoading } = useAuth();
@@ -37,6 +38,11 @@ export default function AppRoutes() {
       <Route path="/admin/productos" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
       <Route path="/admin/productos/lista" element={<ProtectedRoute><AdminProductList /></ProtectedRoute>} />
       <Route path="/admin/ordenes" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
+      <Route path="/admin/categories" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminCategories />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

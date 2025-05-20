@@ -132,7 +132,7 @@ export default function Navbar() {
                               Gestionar Órdenes
                             </Link>
                             <Link
-                              to="/admin/categorias"
+                              to="/admin/categories"
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               onClick={() => setIsMenuOpen(false)}
                             >
