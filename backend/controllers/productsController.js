@@ -13,6 +13,11 @@ const __dirname = path.dirname(__filename);
  */
 export const getAllProducts = async (req, res) => {
     try {
+        // Deshabilitar el caché para esta respuesta
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+        
         const products = await Product.findAll();
         res.status(200).json(products);
     } catch (error) {
@@ -32,8 +37,17 @@ export const getAllProducts = async (req, res) => {
  */
 export const createProduct = async (req, res) => {
     try {
-        const { nombre, descripción, precio, stock, category_id } = req.body;
-        const imagen = req.file ? `/uploads/${req.file.filename}` : null;
+        const { nombre, descripción, precio, stock, category_id, imagen: imagenUrl } = req.body;
+        
+        // Manejar la imagen (puede venir como archivo o como URL)
+        let imagen = null;
+        if (req.file) {
+            // Si se subió un archivo
+            imagen = `/uploads/${req.file.filename}`;
+        } else if (imagenUrl && imagenUrl.startsWith('http')) {
+            // Si se proporcionó una URL de imagen
+            imagen = imagenUrl;
+        }
 
         // Parsear el stock si viene como string JSON
         let stockData = stock;

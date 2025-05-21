@@ -3,9 +3,9 @@ import { Product } from '../types';
 import { useCart } from '../store/useCart';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { API_URL } from '../config/api';
 import { useFavorites } from '../store/useFavorites';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
-import { API_URL } from '../config/api';
 
 interface ProductCardProps {
   product: Product;
@@ -41,15 +41,21 @@ export default function ProductCard({ product }: ProductCardProps) {
   const getImageUrl = (imageUrl: string | null) => {
     if (!imageUrl) return 'https://via.placeholder.com/400?text=No+Image';
     
+    // Si la URL ya es completa, devolverla tal cual
     if (imageUrl.startsWith('http')) {
       return imageUrl;
     }
     
-    if (imageUrl.startsWith('/uploads')) {
-      return `${API_URL}${imageUrl}`;
+    // Si es una ruta relativa, agregar la URL base de la API
+    if (imageUrl.startsWith('/')) {
+      // Si ya tiene /uploads, asegurarse de no duplicar la barra
+      const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+      const cleanImageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+      return `${baseUrl}${cleanImageUrl}`;
     }
     
-    return 'https://via.placeholder.com/400?text=Invalid+Image';
+    // Si no es una URL válida, devolver un placeholder
+    return 'https://via.placeholder.com/400?text=Imagen+no+disponible';
   };
 
   const handleAction = async () => {
@@ -101,16 +107,22 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="relative">
-        <img
-          src={getImageUrl(product.imagen)}
-          alt={product.nombre}
-          className="w-full h-64 object-cover"
-          onError={(e: any) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://via.placeholder.com/400?text=Error+Loading+Image';
-            console.log('Error loading image:', product.imagen);
-          }}
-        />
+        <div className="w-full h-64 bg-gray-100 flex items-center justify-center overflow-hidden">
+          <img
+            src={getImageUrl(product.imagen)}
+            alt={product.nombre}
+            className="w-full h-full object-cover"
+            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+              const target = e.target as HTMLImageElement;
+              // Solo intentar cambiar la fuente si no es ya una URL de error
+              if (!target.src.includes('placeholder.com') && !target.src.includes('error')) {
+                console.error('Error al cargar la imagen:', product.imagen);
+                target.src = 'https://via.placeholder.com/400?text=Error+al+cargar+imagen';
+                target.onerror = null; // Prevenir bucles de error
+              }
+            }}
+          />
+        </div>
         
         <button 
           onClick={handleFavoriteClick}
@@ -160,9 +172,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             
             <button
               onClick={handleAction}
-              disabled={!selectedSize || (selectedSize && stockBySize[selectedSize] <= 0)}
+              disabled={!selectedSize || (selectedSize !== null && stockBySize[selectedSize] <= 0)}
               className={`w-full mt-4 py-2 rounded-md transition-colors ${
-                !selectedSize || (selectedSize && stockBySize[selectedSize] <= 0)
+                !selectedSize || (selectedSize !== null && stockBySize[selectedSize] <= 0)
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-green-600 hover:bg-green-700 text-white'
               }`}

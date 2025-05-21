@@ -1,4 +1,4 @@
-export const API_URL = 'http://localhost:81/api';
+export const API_URL = 'http://localhost:3000/api';
 
 // Verificar si la sesión ha expirado o no es válida
 export const handleSessionExpiration = (status: number): boolean => {
