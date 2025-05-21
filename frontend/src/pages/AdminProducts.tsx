@@ -101,14 +101,39 @@ export default function AdminProducts() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validación de campos requeridos
+    if (!formData.nombre || !formData.descripción || !formData.precio || !formData.category_id) {
+      toast.error('Por favor completa todos los campos requeridos');
+      return;
+    }
+    
+    // Validar que al menos una talla tenga stock
+    const hasStock = Object.values(sizeStocks).some(stock => stock > 0);
+    if (!hasStock) {
+      toast.error('Debes ingresar stock para al menos una talla');
+      return;
+    }
+    
+    // Validar que se haya cargado una imagen
+    if ((uploadType === 'file' && !formData.imagenFile) || (uploadType === 'url' && !formData.imagen)) {
+      toast.error('Por favor selecciona una imagen');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+      
       const form = new FormData();
 
-      form.append('nombre', formData.nombre);
-      form.append('descripción', formData.descripción);
+      // Agregar los campos básicos
+      form.append('nombre', formData.nombre.trim());
+      form.append('descripción', formData.descripción.trim());
       form.append('precio', formData.precio);
       form.append('category_id', formData.category_id);
       
@@ -118,13 +143,27 @@ export default function AdminProducts() {
       console.log('Stock a enviar (JSON string):', stockJSON);
       form.append('stock', stockJSON);
 
+      // Manejar la imagen según el tipo de carga
       if (uploadType === 'file' && formData.imagenFile) {
+        // Si es un archivo, agregarlo al FormData
         form.append('imagen', formData.imagenFile);
       } else if (uploadType === 'url' && formData.imagen) {
-        form.append('imagen', formData.imagen);
+        // Si es una URL, agregarla como campo adicional
+        form.append('imagen', formData.imagen.trim());
+        // También la agregamos como 'imagenUrl' para que el backend la pueda detectar
+        form.append('imagenUrl', formData.imagen.trim());
       }
 
       console.log('Enviando formulario al servidor...');
+      console.log('Datos del formulario:', {
+        nombre: formData.nombre,
+        descripción: formData.descripción,
+        precio: formData.precio,
+        category_id: formData.category_id,
+        stock: sizeStocks,
+        uploadType,
+        hasImage: uploadType === 'file' ? !!formData.imagenFile : !!formData.imagen
+      });
 
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
@@ -134,12 +173,16 @@ export default function AdminProducts() {
         body: form
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al conectar con el servidor');
+        console.error('Error del servidor:', responseData);
+        throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
       }
 
       toast.success('Producto agregado exitosamente');
+      
+      // Resetear el formulario
       setFormData({
         nombre: '',
         descripción: '',
@@ -148,17 +191,24 @@ export default function AdminProducts() {
         imagen: '',
         imagenFile: null,
       });
+      
       // Reiniciar el stock por talla
       setSizeStocks({
         36: 0, 37: 0, 38: 0, 39: 0, 40: 0, 41: 0, 42: 0, 43: 0, 44: 0
       });
+      
+      // Cambiar a la pestaña de subir archivo por defecto
+      setUploadType('file');
+      
     } catch (error: any) {
       console.error('Error al crear producto:', error);
       if (error.message === 'Unauthorized') {
         toast.error('Sesión expirada. Iniciá sesión nuevamente.');
         navigate('/login', { replace: true });
       } else {
-        toast.error(error.message || 'Error al conectar con el servidor');
+        const errorMessage = error.message || 'Error al conectar con el servidor';
+        console.error('Detalles del error:', error);
+        toast.error(`Error: ${errorMessage}`);
       }
     } finally {
       setIsLoading(false);

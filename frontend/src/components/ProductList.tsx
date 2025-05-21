@@ -12,7 +12,6 @@ export default function ProductList() {
   const [error, setError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const searchTerm = searchParams.get('search')?.toLowerCase() || '';
-  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -36,8 +35,8 @@ export default function ProductList() {
           throw new Error(`Error al cargar productos: ${response.status}`);
         }
         
-        const data = await response.json();
-        setProducts(data);
+        const products = await response.json();
+        setProducts(products);
       } catch (error) {
         console.error('Error al cargar productos:', error);
         if (error instanceof Error && error.message === 'no_token') {
