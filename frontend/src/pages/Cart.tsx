@@ -1,14 +1,13 @@
 import { Trash2 } from 'lucide-react';
 import { useCart } from '../store/useCart';
 import { useNavigate } from 'react-router-dom';
-import { fetchWithAuth, API_URL } from '../config/api';
-import { toast } from 'react-hot-toast';
+import { API_URL } from '../config/api';
 import { CartItem } from '../types';
 
 export default function Cart() {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity } = useCart();
-  const total = items.reduce((sum: number, item: CartItem) => sum + Number(item.price) * Number(item.quantity), 0);
+  const total = items.reduce((sum: number, item: CartItem) => sum + Number(item.precio) * Number(item.quantity), 0);
 
   // Añadir la misma función getImageUrl que usamos en ProductCard
   const getImageUrl = (imageUrl: string | null) => {
@@ -50,32 +49,32 @@ export default function Cart() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="bg-white p-6 rounded-lg shadow-md">
+            <div key={item.product_id} className="bg-white p-6 rounded-lg shadow-md">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <img
-                    src={getImageUrl(item.image)}
-                    alt={item.name}
+                    src={getImageUrl(item.imagen)}
+                    alt={item.nombre}
                     className="w-20 h-20 object-cover rounded-md"
                   />
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">{item.name}</h3>
+                    <h3 className="text-lg font-medium text-gray-900">{item.nombre}</h3>
                     <p className="text-gray-500">Talla: {item.selectedSize}</p>
-                    <p className="text-gray-500">${Number(item.price).toFixed(2)}</p>
+                    <p className="text-gray-500">${Number(item.precio).toFixed(2)}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center border rounded-md">
                     <button
-                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                      onClick={() => updateQuantity(item.product_id, Math.max(1, item.quantity - 1))}
                       className="px-3 py-1 text-gray-600 hover:text-gray-800"
                     >
                       -
                     </button>
                     <span className="px-3 py-1 text-gray-800">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
                       className="px-3 py-1 text-gray-600 hover:text-gray-800"
                     >
                       +
@@ -83,7 +82,7 @@ export default function Cart() {
                   </div>
                   
                   <button
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.product_id)}
                     className="text-red-500 hover:text-red-700"
                   >
                     <Trash2 className="h-5 w-5" />

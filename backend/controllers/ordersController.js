@@ -63,7 +63,9 @@ export const createOrder = async (req, res) => {
             user_id: userId,
             fecha: req.body.fecha || new Date(),
             estado,
-            total
+            total,
+            direccion_envio: req.body.direccion_envio,
+            metodo_pago: req.body.metodo_pago
         });
 
         // Asignar el `order_id` a cada detalle y crear los registros en OrderDetail

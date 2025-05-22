@@ -36,23 +36,24 @@ export default function Checkout() {
     setIsLoading(true);
 
     try {
-      console.log('Datos de checkout:', checkoutData);
+      // Datos de checkout disponibles si necesitas debug
+      // console.log('Datos de checkout:', checkoutData);
       
       const orderData = {
         items: checkoutData?.items.map((item) => ({
-          product_id: item.id,
+          product_id: item.product_id,
           cantidad: item.quantity,
-          precio: item.price,
+          precio: item.precio,
           talla: item.selectedSize
         })),
         estado: 'pendiente',
         fecha: new Date().toISOString(),
         total: checkoutData?.total,
-        direccionEnvio: formData.direccionEnvio,
-        metodoPago: formData.metodoPago
+        direccion_envio: formData.direccionEnvio,
+        metodo_pago: formData.metodoPago
       };
 
-      console.log('Enviando datos de orden:', orderData);
+      // console.log('Enviando datos de orden:', orderData);
 
       const response = await fetchWithAuth('/orders', {
         method: 'POST',
@@ -135,9 +136,9 @@ export default function Checkout() {
           <div className="bg-gray-50 p-6 rounded-lg">
             {/* Mostrar items y total */}
             {checkoutData.items.map((item) => (
-              <div key={item.id} className="flex justify-between mb-2">
-                <span>{item.name} x {item.quantity}</span>
-                <span>${(Number(item.price) * Number(item.quantity)).toFixed(2)}</span>
+              <div key={item.product_id} className="flex justify-between mb-2">
+                <span>{item.nombre} x {item.quantity}</span>
+                <span>${(Number(item.precio) * Number(item.quantity)).toFixed(2)}</span>
               </div>
             ))}
             <div className="border-t mt-4 pt-4">

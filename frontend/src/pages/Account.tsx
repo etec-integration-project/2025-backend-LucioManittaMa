@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { toast } from 'react-hot-toast';
 import { Order, OrderDetail } from '../types';
 
 export default function Account() {
+  const navigate = useNavigate();
   const { user, refreshUserSession, isLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -127,7 +128,10 @@ export default function Account() {
           
           <div>
             <h3 className="text-lg font-semibold mb-2">Configuración de la Cuenta</h3>
-            <button className="text-green-600 hover:text-green-700">
+            <button
+              className="text-green-600 hover:text-green-700"
+              onClick={() => navigate('/change-password')}
+            >
               Cambiar Contraseña
             </button>
           </div>

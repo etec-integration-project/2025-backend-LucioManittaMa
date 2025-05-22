@@ -69,29 +69,28 @@ const User = sequelize.define('User', {
 const createIndexes = async () => {
   try {
     await sequelize.query('ALTER TABLE users ADD UNIQUE INDEX users_email_unique (email)');
-    console.log('✅ Índice de email creado');
+    ('✅ Índice de email creado');
   } catch (error) {
-    console.log('⚠️ Índice de email ya existe o no se pudo crear');
+    ('⚠️ Índice de email ya existe o no se pudo crear');
   }
 
   try {
     await sequelize.query('ALTER TABLE users ADD INDEX users_google_id (googleId)');
-    console.log('✅ Índice de googleId creado');
+    ('✅ Índice de googleId creado');
   } catch (error) {
-    console.log('⚠️ Índice de googleId ya existe o no se pudo crear');
+    ('⚠️ Índice de googleId ya existe o no se pudo crear');
   }
 
   try {
     await sequelize.query('ALTER TABLE users ADD INDEX users_github_id (githubId)');
-    console.log('✅ Índice de githubId creado');
+    ('✅ Índice de githubId creado');
   } catch (error) {
-    console.log('⚠️ Índice de githubId ya existe o no se pudo crear');
+    ('⚠️ Índice de githubId ya existe o no se pudo crear');
   }
 };
 
 // Sincronizar y crear índices
 sequelize.sync().then(() => {
-  console.log('✅ Tabla users sincronizada');
   createIndexes();
 }).catch(error => {
   console.error('❌ Error al sincronizar la tabla:', error);

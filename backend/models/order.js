@@ -27,6 +27,14 @@ const Order = sequelize.define('Order', {
     total: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false
+    },
+    direccion_envio: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    metodo_pago: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
 }, {
     tableName: 'orders',

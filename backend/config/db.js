@@ -30,13 +30,9 @@ const sequelize = new Sequelize(
 // Función para sincronizar la base de datos
 const syncDatabase = async () => {
   try {
-    console.log('Conectando a la base de datos con Sequelize...');
     await sequelize.authenticate();
-    console.log('✅ Conexión a la base de datos establecida correctamente');
-    
-    // Sincronizar modelos con la base de datos
-    await sequelize.sync({ alter: true });
-    console.log('✅ Base de datos sincronizada');
+    // await sequelize.sync({ alter: true }); // Desactivado para evitar conflictos de migración automática
+    // Solo log de éxito o error, no spam de logs
   } catch (error) {
     console.error('Error al sincronizar la base de datos:', error);
     process.exit(1);

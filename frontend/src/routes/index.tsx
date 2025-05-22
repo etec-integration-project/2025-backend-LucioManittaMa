@@ -9,6 +9,7 @@ import AdminOrders from '../pages/AdminOrders';
 import Cart from '../pages/Cart';
 import Favorites from '../pages/Favorites';
 import Account from '../pages/Account';
+import ChangePassword from '../pages/ChangePassword';
 import Checkout from '../pages/Checkout';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
@@ -34,6 +35,7 @@ export default function AppRoutes() {
       <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
       <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+      <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
       <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
       <Route path="/admin/productos" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
       <Route path="/admin/productos/lista" element={<ProtectedRoute><AdminProductList /></ProtectedRoute>} />

@@ -78,10 +78,10 @@ export default function ProductCard({ product }: ProductCardProps) {
       }
 
       addToCart({
-        id: product.product_id,
-        name: product.nombre,
-        price: product.precio,
-        image: product.imagen || 'https://via.placeholder.com/400',
+        product_id: product.product_id,
+        nombre: product.nombre,
+        precio: product.precio,
+        imagen: product.imagen || 'https://via.placeholder.com/400',
         quantity: 1,
         selectedSize
       });

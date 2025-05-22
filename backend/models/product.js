@@ -42,7 +42,7 @@ const Product = sequelize.define('Product', {
                     });
                     return result;
                 } catch (e) {
-                    console.error('Error al parsear stock:', e);
+                    error('Error al parsear stock:', e);
                     return {
                         36: 0, 37: 0, 38: 0, 39: 0, 40: 0, 41: 0, 42: 0, 43: 0, 44: 0
                     };
@@ -62,7 +62,6 @@ const Product = sequelize.define('Product', {
             };
         },
         set(value) {
-            console.log('Setting stock value:', value);
             
             let stockToStore = {};
             
@@ -73,7 +72,7 @@ const Product = sequelize.define('Product', {
                         stockToStore[size] = parseInt(parsed[size]) || 0;
                     });
                 } catch (e) {
-                    console.error('Error al parsear stock en setter:', e);
+                    error('Error al parsear stock en setter:', e);
                     [36, 37, 38, 39, 40, 41, 42, 43, 44].forEach(size => {
                         stockToStore[size] = 0;
                     });
@@ -88,7 +87,6 @@ const Product = sequelize.define('Product', {
                 });
             }
             
-            console.log('Stock procesado para almacenar:', stockToStore);
             this.setDataValue('stock', stockToStore);
         }
     },
@@ -137,7 +135,7 @@ const updateStockBySize = async (productId, size, quantity) => {
         await product.update({ stock: currentStock });
         return true;
     } catch (error) {
-        console.error('Error al actualizar stock:', error);
+        error('Error al actualizar stock:', error);
         return false;
     }
 };
@@ -157,7 +155,7 @@ const checkStockAvailability = async (productId, size, quantity) => {
         const currentStock = product.stock;
         return currentStock[size] >= quantity;
     } catch (error) {
-        console.error('Error al verificar stock:', error);
+        error('Error al verificar stock:', error);
         return false;
     }
 };

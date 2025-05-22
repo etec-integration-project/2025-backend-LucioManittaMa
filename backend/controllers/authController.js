@@ -63,22 +63,22 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, contraseña } = req.body;
-    console.log('=== Debug Login ===');
-    console.log('Email recibido:', email);
-    console.log('Contraseña recibida:', contraseña ? 'Sí' : 'No');
+    ('=== Debug Login ===');
+    ('Email recibido:', email);
+    ('Contraseña recibida:', contraseña ? 'Sí' : 'No');
 
     // Buscar usuario
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      console.log('❌ Usuario no encontrado');
+      ('❌ Usuario no encontrado');
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
-    console.log('✅ Usuario encontrado');
+    ('✅ Usuario encontrado');
 
     // Verificar contraseña
-    console.log('Verificando contraseña...');
+    ('Verificando contraseña...');
     const isValidPassword = await bcrypt.compare(contraseña, user.contraseña);
-    console.log('Resultado de verificación:', isValidPassword ? '✅ Correcta' : '❌ Incorrecta');
+    ('Resultado de verificación:', isValidPassword ? '✅ Correcta' : '❌ Incorrecta');
     
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
@@ -91,7 +91,7 @@ export const login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
-    console.log('✅ Login exitoso');
+    ('✅ Login exitoso');
     res.json({
       token,
       user: {
@@ -134,8 +134,8 @@ export const googleAuth = async (req, res) => {
       return res.status(400).json({ error: 'Token no proporcionado' });
     }
 
-    console.log('=== Debug Google Auth ===');
-    console.log('Verificando token de Google...');
+    ('=== Debug Google Auth ===');
+    ('Verificando token de Google...');
     
     const ticket = await googleClient.verifyIdToken({
       idToken: token,
@@ -143,27 +143,27 @@ export const googleAuth = async (req, res) => {
     });
 
     const { email, name, sub: googleId } = ticket.getPayload();
-    console.log('Datos de Google:', { email, name, googleId });
+    ('Datos de Google:', { email, name, googleId });
 
     // Primero buscamos por googleId
     let user = await User.findOne({ where: { googleId } });
-    console.log('Búsqueda por googleId:', user ? 'Usuario encontrado' : 'No encontrado');
+    ('Búsqueda por googleId:', user ? 'Usuario encontrado' : 'No encontrado');
 
     if (!user) {
       // Si no existe por googleId, buscamos por email
       user = await User.findOne({ where: { email } });
-      console.log('Búsqueda por email:', user ? 'Usuario encontrado' : 'No encontrado');
+      ('Búsqueda por email:', user ? 'Usuario encontrado' : 'No encontrado');
 
       if (user) {
         // Si el usuario existe por email pero no tiene googleId, lo actualizamos
         if (!user.googleId) {
-          console.log('Actualizando googleId para usuario existente');
+          ('Actualizando googleId para usuario existente');
           user.googleId = googleId;
           await user.save();
         }
       } else {
         // Si no existe por ninguno de los dos, creamos uno nuevo
-        console.log('Creando nuevo usuario con Google');
+        ('Creando nuevo usuario con Google');
         user = await User.create({
           email,
           nombre: name,
@@ -180,7 +180,7 @@ export const googleAuth = async (req, res) => {
       return res.status(500).json({ error: 'Error en la autenticación' });
     }
 
-    console.log('Usuario autenticado:', {
+    ('Usuario autenticado:', {
       id: user.user_id,
       email: user.email,
       rol: user.rol
@@ -225,14 +225,14 @@ export const googleAuth = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    console.log('=== Debug Forgot Password ===');
-    console.log('Email recibido:', email);
+    ('=== Debug Forgot Password ===');
+    ('Email recibido:', email);
 
     const user = await User.findOne({ where: { email } });
-    console.log('Usuario encontrado:', user ? 'Sí' : 'No');
+    ('Usuario encontrado:', user ? 'Sí' : 'No');
 
     if (!user) {
-      console.log('❌ Usuario no encontrado');
+      ('❌ Usuario no encontrado');
       return res.status(404).json({ message: 'No existe un usuario con ese email' });
     }
 
@@ -240,7 +240,7 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordToken = token;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
     await user.save();
-    console.log('✅ Token de recuperación generado');
+    ('✅ Token de recuperación generado');
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
     
@@ -259,7 +259,7 @@ export const forgotPassword = async (req, res) => {
       };
 
       const info = await transporter.sendMail(mailOptions);
-      console.log('✅ Email enviado correctamente', info.response);
+      ('✅ Email enviado correctamente', info.response);
     } catch (emailError) {
       console.error('❌ Error al enviar email:', emailError.message);
       console.error('❌ Detalles del error de email:', emailError);
@@ -282,12 +282,12 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { token, contraseña } = req.body;
-    console.log('=== Debug Reset Password ===');
-    console.log('Token recibido:', token);
-    console.log('Contraseña recibida:', contraseña ? 'Sí' : 'No');
+    ('=== Debug Reset Password ===');
+    ('Token recibido:', token);
+    ('Contraseña recibida:', contraseña ? 'Sí' : 'No');
     
     if (!token || !contraseña) {
-      console.log('❌ Datos incompletos');
+      ('❌ Datos incompletos');
       return res.status(400).json({ 
         error: 'Token y contraseña son requeridos',
         received: { token: !!token, contraseña: !!contraseña }
@@ -302,39 +302,39 @@ export const resetPassword = async (req, res) => {
     });
 
     if (!user) {
-      console.log('❌ Usuario no encontrado o token expirado');
+      ('❌ Usuario no encontrado o token expirado');
       return res.status(400).json({ error: 'El token es inválido o ha expirado' });
     }
 
-    console.log('✅ Usuario encontrado, procediendo a actualizar contraseña');
+    ('✅ Usuario encontrado, procediendo a actualizar contraseña');
     
     // Actualizar usuario - el hook beforeUpdate se encargará de hashear la contraseña
     user.contraseña = contraseña;
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
     
-    console.log('Guardando cambios...');
+    ('Guardando cambios...');
     await user.save();
-    console.log('Cambios guardados');
+    ('Cambios guardados');
 
     // Verificar que la contraseña se guardó correctamente
     const updatedUser = await User.findOne({ where: { user_id: user.user_id } });
-    console.log('Usuario recuperado después de guardar:', updatedUser ? 'Sí' : 'No');
+    ('Usuario recuperado después de guardar:', updatedUser ? 'Sí' : 'No');
     
     if (!updatedUser) {
-      console.log('❌ Error: No se pudo recuperar el usuario después de guardar');
+      ('❌ Error: No se pudo recuperar el usuario después de guardar');
       return res.status(500).json({ error: 'Error al actualizar la contraseña' });
     }
 
     const isPasswordValid = await updatedUser.validatePassword(contraseña);
-    console.log('Verificación post-guardado:', isPasswordValid ? '✅ Correcta' : '❌ Incorrecta');
+    ('Verificación post-guardado:', isPasswordValid ? '✅ Correcta' : '❌ Incorrecta');
 
     if (!isPasswordValid) {
-      console.log('❌ Error: La contraseña no se guardó correctamente');
+      ('❌ Error: La contraseña no se guardó correctamente');
       return res.status(500).json({ error: 'Error al actualizar la contraseña' });
     }
 
-    console.log('✅ Contraseña actualizada correctamente');
+    ('✅ Contraseña actualizada correctamente');
     res.json({ message: 'Contraseña actualizada correctamente' });
   } catch (error) {
     console.error('❌ Error al restablecer contraseña:', error);
@@ -461,24 +461,53 @@ export const githubAuth = async (req, res) => {
   }
 };
 
+export const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Debes ingresar la contraseña actual y la nueva contraseña.' });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.contraseña);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'La contraseña actual es incorrecta.' });
+    }
+
+    user.contraseña = newPassword;
+    await user.save();
+
+    res.json({ message: 'Contraseña actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error al cambiar la contraseña:', error);
+    res.status(500).json({ message: 'Error al cambiar la contraseña.' });
+  }
+};
+
 export const verifyToken = async (req, res) => {
   try {
-    console.log('=== Debug Verify Token ===');
-    console.log('UserId recibido:', req.user.userId);
+    ('=== Debug Verify Token ===');
+    ('UserId recibido:', req.user.userId);
     
     const user = await User.findOne({
       where: { user_id: req.user.userId },
       attributes: ['user_id', 'nombre', 'email', 'rol', 'googleId', 'githubId']
     });
     
-    console.log('Usuario encontrado:', user ? 'Sí' : 'No');
+    ('Usuario encontrado:', user ? 'Sí' : 'No');
     
     if (!user) {
-      console.log('❌ Usuario no encontrado');
+      ('❌ Usuario no encontrado');
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    console.log('✅ Usuario verificado:', {
+    ('✅ Usuario verificado:', {
       id: user.user_id,
       email: user.email,
       rol: user.rol
