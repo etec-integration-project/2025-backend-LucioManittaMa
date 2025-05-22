@@ -230,11 +230,11 @@ export default function AdminOrders() {
               <div>
                 <h4 className="font-medium text-gray-900 mb-2">Información de Envío</h4>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Dirección:</span> {selectedOrder.direccionEnvio}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Método de Pago:</span> {selectedOrder.metodoPago}
-                </p>
+  <span className="font-medium">Dirección:</span> {selectedOrder.direccion_envio || <span className="italic text-gray-400">No especificada</span>}
+</p>
+<p className="text-sm text-gray-600">
+  <span className="font-medium">Método de Pago:</span> {selectedOrder.metodo_pago || <span className="italic text-gray-400">No especificado</span>}
+</p>
               </div>
             </div>
 

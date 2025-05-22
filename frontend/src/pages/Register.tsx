@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
-import { Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin, Eye, EyeOff } from 'lucide-react';
 import { API_URL } from '../config/api.ts';
 
 export default function Register() {
@@ -17,6 +17,7 @@ export default function Register() {
     teléfono: '',
     rol: 'cliente'
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -123,15 +124,31 @@ export default function Register() {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
-                  id="contraseña"
-                  name="contraseña"
-                  type="password"
-                  required
-                  value={formData.contraseña}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="contraseña"
+                    autoComplete="new-password"
+                    required
+                    placeholder="Contraseña"
+                    className="w-full border px-3 py-2 rounded placeholder-gray-400"
+                    value={formData.contraseña}
+                    onChange={handleChange}
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className="absolute right-2 top-2"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-500" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-500" />
+                  )}
+                  </button>
+                </div>
               </div>
             </div>
 

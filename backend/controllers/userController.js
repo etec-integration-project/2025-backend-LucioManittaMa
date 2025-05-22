@@ -49,7 +49,7 @@ export const loginUser = async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
-        console.log('Token generado:', { userId: user.user_id, rol: user.rol });
+        ('Token generado:', { userId: user.user_id, rol: user.rol });
 
         res.json({
             user: {

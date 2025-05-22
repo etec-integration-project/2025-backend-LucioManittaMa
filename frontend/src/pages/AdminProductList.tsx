@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { Product } from '../types';
+import ProductEditModal from '../components/ProductEditModal';
 
 interface StockUpdate {
   productId: number | null;
@@ -12,6 +13,9 @@ interface StockUpdate {
 }
 
 export default function AdminProductList() {
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
@@ -202,13 +206,42 @@ export default function AdminProductList() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => {/* Implementar edición de producto */}}
-                      className="text-indigo-600 hover:text-indigo-900 mr-2"
-                    >
-                      Editar
-                    </button>
-                  </td>
+  <button
+  onClick={() => {
+    setEditProduct(product);
+    setShowEditModal(true);
+  }}
+  className="text-indigo-600 hover:text-indigo-900 mr-2"
+>
+  Editar
+</button>
+  <button
+    onClick={async () => {
+      if (window.confirm('¿Seguro que quieres eliminar este producto?')) {
+        try {
+          const response = await fetch(`${API_URL}/products/${product.product_id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al eliminar el producto');
+          }
+          toast.success('Producto eliminado correctamente');
+          // Actualizar la lista de productos
+          setProducts(products.filter(p => p.product_id !== product.product_id));
+        } catch (error: any) {
+          toast.error(error.message || 'Error al eliminar el producto');
+        }
+      }
+    }}
+    className="text-red-600 hover:text-red-900"
+  >
+    Eliminar
+  </button>
+</td>
                 </tr>
               ))}
             </tbody>
@@ -258,6 +291,17 @@ export default function AdminProductList() {
           </div>
         </div>
       )}
-    </div>
+    {/* Modal para editar producto */}
+    {showEditModal && editProduct && (
+      <ProductEditModal
+        product={editProduct}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onProductUpdated={(updated) => {
+          setProducts(products.map(p => p.product_id === updated.product_id ? updated : p));
+        }}
+      />
+    )}
+  </div>
   );
 } 

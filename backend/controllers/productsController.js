@@ -69,7 +69,7 @@ export const createProduct = async (req, res) => {
             imagen
         };
 
-        console.log('Datos del producto a crear:', productData);
+        ('Datos del producto a crear:', productData);
 
         const product = await Product.create(productData);
         res.status(201).json(product);
@@ -97,7 +97,22 @@ export const updateProduct = async (req, res) => {
         if (!product) {
             return res.status(404).json({ error: "Producto no encontrado" });
         }
-        await product.update(req.body);
+
+        // Procesar imagen: archivo o URL
+        let imagen = product.imagen; // valor actual por defecto
+        if (req.file) {
+            imagen = `/uploads/${req.file.filename}`;
+        } else if (req.body.imagen && req.body.imagen.startsWith('http')) {
+            imagen = req.body.imagen;
+        }
+
+        // Construir los datos a actualizar
+        const updateData = {
+            ...req.body,
+            imagen
+        };
+
+        await product.update(updateData);
         res.status(200).json(product);
     } catch (error) {
         res.status(400).json({ error: error.message });

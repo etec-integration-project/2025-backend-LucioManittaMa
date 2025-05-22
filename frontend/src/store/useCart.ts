@@ -14,12 +14,12 @@ export const useCart = create<CartStore>((set) => ({
   addItem: (item) =>
     set((state) => {
       const existingItem = state.items.find(
-        (i) => i.id === item.id && i.selectedSize === item.selectedSize
+        (i) => i.product_id === item.product_id && i.selectedSize === item.selectedSize
       );
       if (existingItem) {
         return {
           items: state.items.map((i) =>
-            i.id === item.id && i.selectedSize === item.selectedSize
+            i.product_id === item.product_id && i.selectedSize === item.selectedSize
               ? { ...i, quantity: i.quantity + item.quantity }
               : i
           ),
@@ -30,13 +30,13 @@ export const useCart = create<CartStore>((set) => ({
   removeItem: (itemId) =>
     set((state) => ({
       items: state.items.filter(
-        (i) => i.id !== itemId
+        (i) => i.product_id !== itemId
       ),
     })),
   updateQuantity: (itemId, newQuantity) =>
     set((state) => ({
       items: state.items.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
+        item.product_id === itemId ? { ...item, quantity: newQuantity } : item
       ),
     })),
   clearCart: () => set({ items: [] }),
