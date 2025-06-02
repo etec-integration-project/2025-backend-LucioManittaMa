@@ -1,5 +1,33 @@
 services:
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false  # Para desarrollo, en producción activa la seguridad
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"  # Ajusta según los recursos de tu máquina
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.9.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    depends_on:
+      - elasticsearch
+
   mysql:
     image: mysql:8
     container_name: mysql_db
@@ -39,6 +67,8 @@ services:
       FRONTEND_URL: http://localhost:81
       GITHUB_CLIENT_ID: Ov23lifEAJCr9kGFhwP4
       GITHUB_CLIENT_SECRET: ffd49532c203baabc6a6a5f16d84bd8fa5a8c772
+      ELASTICSEARCH_NODE: http://elasticsearch:9200
+      ELASTICSEARCH_INDEX_PRODUCTS: urban_products
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -63,3 +93,4 @@ services:
 
 volumes:
   mysql_data:
+  elasticsearch_data:
