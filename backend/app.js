@@ -8,6 +8,7 @@ import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 import { errorHandler } from './controllers/errorHandler.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -49,6 +50,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/search', searchRoutes);
 
 // Ruta de prueba
 app.get('/api/test', (req, res) => res.json({ message: 'API funcionando correctamente' }));

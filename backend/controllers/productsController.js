@@ -1,4 +1,5 @@
 import { Product, updateStockBySize, checkStockAvailability } from '../models/index.js';
+import { indexProduct, deleteProductFromIndex } from '../services/search/productSearchService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -69,10 +70,29 @@ export const createProduct = async (req, res) => {
             imagen
         };
 
-        ('Datos del producto a crear:', productData);
+        const product = await Product.create({
+            nombre,
+            descripción,
+            precio,
+            stock: stock || {},
+            category_id,
+            imagen
+        });
 
-        const product = await Product.create(productData);
-        res.status(201).json(product);
+        // Indexar el producto en Elasticsearch
+        try {
+            await indexProduct(product);
+            console.log('Producto indexado en Elasticsearch');
+        } catch (esError) {
+            console.error('Error indexando producto en Elasticsearch:', esError);
+            // No fallar la operación principal por un error en Elasticsearch
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'Producto creado exitosamente',
+            data: product
+        });
     } catch (error) {
         console.error('Error al crear producto:', error);
         res.status(500).json({ 
@@ -93,27 +113,35 @@ export const updateProduct = async (req, res) => {
     }
 
     try {
-        const product = await Product.findByPk(req.params.id);
-        if (!product) {
-            return res.status(404).json({ error: "Producto no encontrado" });
+        // Actualizar el producto
+        const updatedProduct = await Product.update(
+            { nombre, descripción, precio, stock: stock || {}, category_id, imagen },
+            { where: { product_id: req.params.id }, returning: true, plain: true }
+        );
+
+        if (!updatedProduct[1]) {
+            return res.status(404).json({
+                success: false,
+                message: 'Producto no encontrado'
+            });
         }
 
-        // Procesar imagen: archivo o URL
-        let imagen = product.imagen; // valor actual por defecto
-        if (req.file) {
-            imagen = `/uploads/${req.file.filename}`;
-        } else if (req.body.imagen && req.body.imagen.startsWith('http')) {
-            imagen = req.body.imagen;
+        const productData = updatedProduct[1].get();
+        
+        // Actualizar el índice de Elasticsearch
+        try {
+            await indexProduct(productData);
+            console.log('Producto actualizado en Elasticsearch');
+        } catch (esError) {
+            console.error('Error actualizando producto en Elasticsearch:', esError);
+            // No fallar la operación principal por un error en Elasticsearch
         }
 
-        // Construir los datos a actualizar
-        const updateData = {
-            ...req.body,
-            imagen
-        };
-
-        await product.update(updateData);
-        res.status(200).json(product);
+        res.status(200).json({
+            success: true,
+            message: 'Producto actualizado exitosamente',
+            data: productData
+        });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -130,12 +158,42 @@ export const deleteProduct = async (req, res) => {
     }
 
     try {
+        // Primero obtenemos el producto para tener la información de la imagen
         const product = await Product.findByPk(req.params.id);
+        
         if (!product) {
-            return res.status(404).json({ error: "Producto no encontrado" });
+            return res.status(404).json({
+                success: false,
+                message: 'Producto no encontrado'
+            });
         }
-        await product.destroy();
-        res.status(200).json({ message: "Producto eliminado" });
+        
+        // Eliminar la imagen del sistema de archivos si existe
+        if (product.imagen && !product.imagen.startsWith('http')) {
+            const imagePath = path.join(__dirname, '..', product.imagen);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+            }
+        }
+        
+        // Eliminar el producto de la base de datos
+        await Product.destroy({
+            where: { product_id: req.params.id }
+        });
+        
+        // Eliminar el producto del índice de Elasticsearch
+        try {
+            await deleteProductFromIndex(req.params.id);
+            console.log('Producto eliminado de Elasticsearch');
+        } catch (esError) {
+            console.error('Error eliminando producto de Elasticsearch:', esError);
+            // No fallar la operación principal por un error en Elasticsearch
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Producto eliminado exitosamente'
+        });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
